@@ -14,16 +14,448 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      job_comments: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          job_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          job_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          job_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_comments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_comments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_number_sequences: {
+        Row: {
+          last_value: number
+          seq_date: string
+          tenant_id: string
+        }
+        Insert: {
+          last_value?: number
+          seq_date: string
+          tenant_id: string
+        }
+        Update: {
+          last_value?: number
+          seq_date?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_number_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          job_no: string
+          n3_customer_code: string | null
+          n3_customer_id: string | null
+          n3_customer_name: string | null
+          n3_delivery_order_id: string | null
+          n3_sales_invoice_id: string | null
+          n3_stock_code: string | null
+          n3_stock_id: string | null
+          priority: Database["public"]["Enums"]["job_priority"]
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          job_no: string
+          n3_customer_code?: string | null
+          n3_customer_id?: string | null
+          n3_customer_name?: string | null
+          n3_delivery_order_id?: string | null
+          n3_sales_invoice_id?: string | null
+          n3_stock_code?: string | null
+          n3_stock_id?: string | null
+          priority?: Database["public"]["Enums"]["job_priority"]
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          job_no?: string
+          n3_customer_code?: string | null
+          n3_customer_id?: string | null
+          n3_customer_name?: string | null
+          n3_delivery_order_id?: string | null
+          n3_sales_invoice_id?: string | null
+          n3_stock_code?: string | null
+          n3_stock_id?: string | null
+          priority?: Database["public"]["Enums"]["job_priority"]
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_table: string | null
+          id: string
+          is_read: boolean
+          read_at: string | null
+          recipient_id: string
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_table?: string | null
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          recipient_id: string
+          tenant_id: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_table?: string | null
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          recipient_id?: string
+          tenant_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_mapping: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          interval_days: number | null
+          interval_type: Database["public"]["Enums"]["renewal_interval"]
+          is_active: boolean
+          last_generated_at: string | null
+          n3_customer_code: string | null
+          n3_customer_id: string
+          n3_stock_code: string | null
+          n3_stock_id: string
+          next_due_date: string
+          notes: string | null
+          start_date: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          interval_type?: Database["public"]["Enums"]["renewal_interval"]
+          is_active?: boolean
+          last_generated_at?: string | null
+          n3_customer_code?: string | null
+          n3_customer_id: string
+          n3_stock_code?: string | null
+          n3_stock_id: string
+          next_due_date: string
+          notes?: string | null
+          start_date: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          interval_type?: Database["public"]["Enums"]["renewal_interval"]
+          is_active?: boolean
+          last_generated_at?: string | null
+          n3_customer_code?: string | null
+          n3_customer_id?: string
+          n3_stock_code?: string | null
+          n3_stock_id?: string
+          next_due_date?: string
+          notes?: string | null
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_mapping_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_mapping_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          id: string
+          n3_api_key_ref: string | null
+          n3_company_name: string | null
+          n3_tenant_code: string | null
+          name: string
+          slug: string
+          status: Database["public"]["Enums"]["tenant_status"]
+          tenant_id: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          n3_api_key_ref?: string | null
+          n3_company_name?: string | null
+          n3_tenant_code?: string | null
+          name: string
+          slug: string
+          status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_id?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          n3_api_key_ref?: string | null
+          n3_company_name?: string | null
+          n3_tenant_code?: string | null
+          name?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_id?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      users_local: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          display_name: string | null
+          email: string
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          n3_user_id: string | null
+          role: Database["public"]["Enums"]["user_local_role"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          display_name?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          n3_user_id?: string | null
+          role?: Database["public"]["Enums"]["user_local_role"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          n3_user_id?: string | null
+          role?: Database["public"]["Enums"]["user_local_role"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_local_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_tenant_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["user_local_role"][]
+          _tenant_id: string
+        }
+        Returns: boolean
+      }
+      is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      job_priority: "low" | "normal" | "high" | "urgent"
+      job_status:
+        | "draft"
+        | "open"
+        | "assigned"
+        | "in_progress"
+        | "on_hold"
+        | "completed"
+        | "cancelled"
+        | "invoiced"
+      notification_type:
+        | "job_assigned"
+        | "job_updated"
+        | "job_comment"
+        | "renewal_due"
+        | "system"
+      renewal_interval:
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "semiannual"
+        | "annual"
+        | "custom"
+      tenant_status: "active" | "suspended" | "trial" | "cancelled"
+      user_local_role: "owner" | "admin" | "manager" | "technician" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +582,35 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      job_priority: ["low", "normal", "high", "urgent"],
+      job_status: [
+        "draft",
+        "open",
+        "assigned",
+        "in_progress",
+        "on_hold",
+        "completed",
+        "cancelled",
+        "invoiced",
+      ],
+      notification_type: [
+        "job_assigned",
+        "job_updated",
+        "job_comment",
+        "renewal_due",
+        "system",
+      ],
+      renewal_interval: [
+        "weekly",
+        "monthly",
+        "quarterly",
+        "semiannual",
+        "annual",
+        "custom",
+      ],
+      tenant_status: ["active", "suspended", "trial", "cancelled"],
+      user_local_role: ["owner", "admin", "manager", "technician", "viewer"],
+    },
   },
 } as const
