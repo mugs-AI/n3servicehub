@@ -47,14 +47,8 @@ export type SyncStatusReport = {
   entities: SyncStatusEntity[];
 };
 
-async function assertTenantAdmin(
-  supabase: Awaited<ReturnType<typeof requireSupabaseAuth.server>> extends never
-    ? never
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    : any,
-  userId: string,
-  tenantId: string,
-): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertTenantAdmin(supabase: any, userId: string, tenantId: string): Promise<void> {
   const { data, error } = await supabase
     .from("users_local")
     .select("role, is_active")
