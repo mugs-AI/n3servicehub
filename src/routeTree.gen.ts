@@ -9,38 +9,76 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
+import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminSyncRoute = AuthenticatedAdminSyncRouteImport.update({
+  id: '/admin/sync',
+  path: '/admin/sync',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicHooksSyncTickRoute = ApiPublicHooksSyncTickRouteImport.update({
+  id: '/api/public/hooks/sync-tick',
+  path: '/api/public/hooks/sync-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/admin/sync' | '/api/public/hooks/sync-tick'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/admin/sync' | '/api/public/hooks/sync-tick'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/_authenticated/admin/sync'
+    | '/api/public/hooks/sync-tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ApiPublicHooksSyncTickRoute: typeof ApiPublicHooksSyncTickRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +86,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/sync': {
+      id: '/_authenticated/admin/sync'
+      path: '/admin/sync'
+      fullPath: '/admin/sync'
+      preLoaderRoute: typeof AuthenticatedAdminSyncRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/hooks/sync-tick': {
+      id: '/api/public/hooks/sync-tick'
+      path: '/api/public/hooks/sync-tick'
+      fullPath: '/api/public/hooks/sync-tick'
+      preLoaderRoute: typeof ApiPublicHooksSyncTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminSyncRoute: typeof AuthenticatedAdminSyncRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminSyncRoute: AuthenticatedAdminSyncRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ApiPublicHooksSyncTickRoute: ApiPublicHooksSyncTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

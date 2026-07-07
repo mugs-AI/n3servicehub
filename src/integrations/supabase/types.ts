@@ -551,6 +551,445 @@ export type Database = {
           },
         ]
       }
+      servicehub_customers: {
+        Row: {
+          created_at: string
+          currency_code: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string
+          n3_code: string | null
+          n3_record_id: string
+          name: string | null
+          payload: Json
+          phone: string | null
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_code?: string | null
+          n3_record_id: string
+          name?: string | null
+          payload?: Json
+          phone?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_code?: string | null
+          n3_record_id?: string
+          name?: string | null
+          payload?: Json
+          phone?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicehub_delivery_orders: {
+        Row: {
+          created_at: string
+          doc_date: string | null
+          doc_no: string | null
+          id: string
+          is_cancelled: boolean
+          last_sync_at: string
+          n3_customer_code: string | null
+          n3_customer_name: string | null
+          n3_last_modified: string | null
+          n3_record_id: string
+          payload: Json
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doc_date?: string | null
+          doc_no?: string | null
+          id?: string
+          is_cancelled?: boolean
+          last_sync_at?: string
+          n3_customer_code?: string | null
+          n3_customer_name?: string | null
+          n3_last_modified?: string | null
+          n3_record_id: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doc_date?: string | null
+          doc_no?: string | null
+          id?: string
+          is_cancelled?: boolean
+          last_sync_at?: string
+          n3_customer_code?: string | null
+          n3_customer_name?: string | null
+          n3_last_modified?: string | null
+          n3_record_id?: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_delivery_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicehub_roles: {
+        Row: {
+          created_at: string
+          id: string
+          last_sync_at: string
+          n3_record_id: string
+          name: string | null
+          payload: Json
+          source: string | null
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string
+          n3_record_id: string
+          name?: string | null
+          payload?: Json
+          source?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string
+          n3_record_id?: string
+          name?: string | null
+          payload?: Json
+          source?: string | null
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_roles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicehub_sales_invoices: {
+        Row: {
+          created_at: string
+          currency_code: string | null
+          doc_date: string | null
+          doc_no: string | null
+          id: string
+          is_cancelled: boolean
+          last_sync_at: string
+          n3_customer_code: string | null
+          n3_customer_name: string | null
+          n3_last_modified: string | null
+          n3_record_id: string
+          payload: Json
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string | null
+          doc_date?: string | null
+          doc_no?: string | null
+          id?: string
+          is_cancelled?: boolean
+          last_sync_at?: string
+          n3_customer_code?: string | null
+          n3_customer_name?: string | null
+          n3_last_modified?: string | null
+          n3_record_id: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string | null
+          doc_date?: string | null
+          doc_no?: string | null
+          id?: string
+          is_cancelled?: boolean
+          last_sync_at?: string
+          n3_customer_code?: string | null
+          n3_customer_name?: string | null
+          n3_last_modified?: string | null
+          n3_record_id?: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_sales_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicehub_stock: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string
+          n3_code: string | null
+          n3_record_id: string
+          payload: Json
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          uom: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_code?: string | null
+          n3_record_id: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          uom?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_code?: string | null
+          n3_record_id?: string
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          uom?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_stock_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicehub_users: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string
+          n3_record_id: string
+          name: string | null
+          payload: Json
+          sync_status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_record_id: string
+          name?: string | null
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string
+          n3_record_id?: string
+          name?: string | null
+          payload?: Json
+          sync_status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicehub_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          entity: Database["public"]["Enums"]["sync_entity"]
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          inserted_count: number
+          processed_count: number
+          started_at: string
+          status: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          triggered_by: string
+          updated_count: number
+          watermark_used: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          entity: Database["public"]["Enums"]["sync_entity"]
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          processed_count?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id: string
+          triggered_by?: string
+          updated_count?: number
+          watermark_used?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          entity?: Database["public"]["Enums"]["sync_entity"]
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          processed_count?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_status"]
+          tenant_id?: string
+          triggered_by?: string
+          updated_count?: number
+          watermark_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_schedules: {
+        Row: {
+          created_at: string
+          entity: Database["public"]["Enums"]["sync_entity"]
+          id: string
+          interval_minutes: number
+          is_enabled: boolean
+          last_successful_at: string | null
+          last_watermark: string | null
+          next_due_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity: Database["public"]["Enums"]["sync_entity"]
+          id?: string
+          interval_minutes: number
+          is_enabled?: boolean
+          last_successful_at?: string | null
+          last_watermark?: string | null
+          next_due_at?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity?: Database["public"]["Enums"]["sync_entity"]
+          id?: string
+          interval_minutes?: number
+          is_enabled?: boolean
+          last_successful_at?: string | null
+          last_watermark?: string | null
+          next_due_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
@@ -664,6 +1103,15 @@ export type Database = {
         | "job_comment"
         | "renewal_due"
         | "system"
+      sync_entity:
+        | "customers"
+        | "stock"
+        | "users"
+        | "roles"
+        | "sales_invoices"
+        | "delivery_orders"
+        | "company_profile"
+      sync_status: "pending" | "running" | "success" | "failed" | "partial"
       tenant_status: "active" | "suspended" | "trial" | "cancelled"
       user_local_role: "owner" | "admin" | "manager" | "technician" | "viewer"
     }
@@ -800,6 +1248,16 @@ export const Constants = {
         "renewal_due",
         "system",
       ],
+      sync_entity: [
+        "customers",
+        "stock",
+        "users",
+        "roles",
+        "sales_invoices",
+        "delivery_orders",
+        "company_profile",
+      ],
+      sync_status: ["pending", "running", "success", "failed", "partial"],
       tenant_status: ["active", "suspended", "trial", "cancelled"],
       user_local_role: ["owner", "admin", "manager", "technician", "viewer"],
     },
