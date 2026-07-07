@@ -14,6 +14,176 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          result: string | null
+          tenant_id: string
+          user_code: string | null
+          user_type: string | null
+        }
+        Insert: {
+          action: string
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          result?: string | null
+          tenant_id: string
+          user_code?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          action?: string
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          result?: string | null
+          tenant_id?: string
+          user_code?: string | null
+          user_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_contract_snapshots: {
+        Row: {
+          contract_days: number | null
+          contract_status: string
+          created_at: string
+          expiry_date: string | null
+          id: string
+          last_calculated_at: string | null
+          latest_contract_date: string | null
+          latest_contract_document_id: string | null
+          latest_contract_document_no: string | null
+          latest_contract_source: string | null
+          latest_contract_stock_code: string | null
+          n3_customer_code: string
+          n3_customer_id: string | null
+          n3_customer_name: string | null
+          remaining_days: number | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          contract_days?: number | null
+          contract_status?: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          latest_contract_date?: string | null
+          latest_contract_document_id?: string | null
+          latest_contract_document_no?: string | null
+          latest_contract_source?: string | null
+          latest_contract_stock_code?: string | null
+          n3_customer_code: string
+          n3_customer_id?: string | null
+          n3_customer_name?: string | null
+          remaining_days?: number | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          contract_days?: number | null
+          contract_status?: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          last_calculated_at?: string | null
+          latest_contract_date?: string | null
+          latest_contract_document_id?: string | null
+          latest_contract_document_no?: string | null
+          latest_contract_source?: string | null
+          latest_contract_stock_code?: string | null
+          n3_customer_code?: string
+          n3_customer_id?: string | null
+          n3_customer_name?: string | null
+          remaining_days?: number | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_contract_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          job_id: string
+          tenant_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          job_id: string
+          tenant_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          job_id?: string
+          tenant_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_attachments_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_attachments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_comments: {
         Row: {
           author_id: string | null
@@ -99,6 +269,12 @@ export type Database = {
         Row: {
           actual_end: string | null
           actual_start: string | null
+          approval_note: string | null
+          approval_required: boolean
+          approval_status: string
+          approval_type: string | null
+          approved_at: string | null
+          approved_by: string | null
           assigned_to: string | null
           created_at: string
           created_by: string | null
@@ -106,6 +282,7 @@ export type Database = {
           due_date: string | null
           id: string
           job_no: string
+          job_service_type: string | null
           n3_customer_code: string | null
           n3_customer_id: string | null
           n3_customer_name: string | null
@@ -113,10 +290,10 @@ export type Database = {
           n3_sales_invoice_id: string | null
           n3_stock_code: string | null
           n3_stock_id: string | null
-          priority: Database["public"]["Enums"]["job_priority"]
+          priority: string
           scheduled_end: string | null
           scheduled_start: string | null
-          status: Database["public"]["Enums"]["job_status"]
+          status: string
           tenant_id: string
           title: string
           updated_at: string
@@ -124,6 +301,12 @@ export type Database = {
         Insert: {
           actual_end?: string | null
           actual_start?: string | null
+          approval_note?: string | null
+          approval_required?: boolean
+          approval_status?: string
+          approval_type?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           created_at?: string
           created_by?: string | null
@@ -131,6 +314,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           job_no: string
+          job_service_type?: string | null
           n3_customer_code?: string | null
           n3_customer_id?: string | null
           n3_customer_name?: string | null
@@ -138,10 +322,10 @@ export type Database = {
           n3_sales_invoice_id?: string | null
           n3_stock_code?: string | null
           n3_stock_id?: string | null
-          priority?: Database["public"]["Enums"]["job_priority"]
+          priority?: string
           scheduled_end?: string | null
           scheduled_start?: string | null
-          status?: Database["public"]["Enums"]["job_status"]
+          status?: string
           tenant_id: string
           title: string
           updated_at?: string
@@ -149,6 +333,12 @@ export type Database = {
         Update: {
           actual_end?: string | null
           actual_start?: string | null
+          approval_note?: string | null
+          approval_required?: boolean
+          approval_status?: string
+          approval_type?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           assigned_to?: string | null
           created_at?: string
           created_by?: string | null
@@ -156,6 +346,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           job_no?: string
+          job_service_type?: string | null
           n3_customer_code?: string | null
           n3_customer_id?: string | null
           n3_customer_name?: string | null
@@ -163,15 +354,22 @@ export type Database = {
           n3_sales_invoice_id?: string | null
           n3_stock_code?: string | null
           n3_stock_id?: string | null
-          priority?: Database["public"]["Enums"]["job_priority"]
+          priority?: string
           scheduled_end?: string | null
           scheduled_start?: string | null
-          status?: Database["public"]["Enums"]["job_status"]
+          status?: string
           tenant_id?: string
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "jobs_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "jobs_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -252,58 +450,87 @@ export type Database = {
           },
         ]
       }
-      renewal_mapping: {
+      reminder_rules: {
         Row: {
           created_at: string
-          created_by: string | null
+          days_before_expiry: number
           id: string
-          interval_days: number | null
-          interval_type: Database["public"]["Enums"]["renewal_interval"]
           is_active: boolean
-          last_generated_at: string | null
-          n3_customer_code: string | null
-          n3_customer_id: string
-          n3_stock_code: string | null
-          n3_stock_id: string
-          next_due_date: string
-          notes: string | null
-          start_date: string
+          rule_name: string | null
+          status_to_apply: string
           tenant_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          created_by?: string | null
+          days_before_expiry: number
           id?: string
-          interval_days?: number | null
-          interval_type?: Database["public"]["Enums"]["renewal_interval"]
           is_active?: boolean
-          last_generated_at?: string | null
-          n3_customer_code?: string | null
-          n3_customer_id: string
-          n3_stock_code?: string | null
-          n3_stock_id: string
-          next_due_date: string
-          notes?: string | null
-          start_date: string
+          rule_name?: string | null
+          status_to_apply: string
           tenant_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          days_before_expiry?: number
+          id?: string
+          is_active?: boolean
+          rule_name?: string | null
+          status_to_apply?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_mapping: {
+        Row: {
+          contract_days: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          n3_stock_code: string | null
+          n3_stock_id: string
+          n3_stock_name: string | null
+          notes: string | null
+          service_type: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          contract_days?: number | null
+          created_at?: string
           created_by?: string | null
           id?: string
-          interval_days?: number | null
-          interval_type?: Database["public"]["Enums"]["renewal_interval"]
           is_active?: boolean
-          last_generated_at?: string | null
-          n3_customer_code?: string | null
-          n3_customer_id?: string
+          n3_stock_code?: string | null
+          n3_stock_id: string
+          n3_stock_name?: string | null
+          notes?: string | null
+          service_type?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          contract_days?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
           n3_stock_code?: string | null
           n3_stock_id?: string
-          next_due_date?: string
+          n3_stock_name?: string | null
           notes?: string | null
-          start_date?: string
+          service_type?: string
           tenant_id?: string
           updated_at?: string
         }
@@ -431,29 +658,12 @@ export type Database = {
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
     }
     Enums: {
-      job_priority: "low" | "normal" | "high" | "urgent"
-      job_status:
-        | "draft"
-        | "open"
-        | "assigned"
-        | "in_progress"
-        | "on_hold"
-        | "completed"
-        | "cancelled"
-        | "invoiced"
       notification_type:
         | "job_assigned"
         | "job_updated"
         | "job_comment"
         | "renewal_due"
         | "system"
-      renewal_interval:
-        | "weekly"
-        | "monthly"
-        | "quarterly"
-        | "semiannual"
-        | "annual"
-        | "custom"
       tenant_status: "active" | "suspended" | "trial" | "cancelled"
       user_local_role: "owner" | "admin" | "manager" | "technician" | "viewer"
     }
@@ -583,31 +793,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      job_priority: ["low", "normal", "high", "urgent"],
-      job_status: [
-        "draft",
-        "open",
-        "assigned",
-        "in_progress",
-        "on_hold",
-        "completed",
-        "cancelled",
-        "invoiced",
-      ],
       notification_type: [
         "job_assigned",
         "job_updated",
         "job_comment",
         "renewal_due",
         "system",
-      ],
-      renewal_interval: [
-        "weekly",
-        "monthly",
-        "quarterly",
-        "semiannual",
-        "annual",
-        "custom",
       ],
       tenant_status: ["active", "suspended", "trial", "cancelled"],
       user_local_role: ["owner", "admin", "manager", "technician", "viewer"],
