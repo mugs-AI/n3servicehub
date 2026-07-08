@@ -9,11 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as N3LaunchRouteImport } from './routes/n3-launch'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StatusApiRouteImport } from './routes/status.api'
 import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const N3LaunchRoute = N3LaunchRouteImport.update({
+  id: '/n3-launch',
+  path: '/n3-launch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -22,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StatusApiRoute = StatusApiRouteImport.update({
+  id: '/api',
+  path: '/api',
+  getParentRoute: () => StatusRoute,
 } as any)
 const AuthenticatedAdminSyncRoute = AuthenticatedAdminSyncRouteImport.update({
   id: '/admin/sync',
@@ -36,11 +60,19 @@ const ApiPublicHooksSyncTickRoute = ApiPublicHooksSyncTickRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/n3-launch': typeof N3LaunchRoute
+  '/status': typeof StatusRouteWithChildren
+  '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/n3-launch': typeof N3LaunchRoute
+  '/status': typeof StatusRouteWithChildren
+  '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
@@ -48,18 +80,40 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/n3-launch': typeof N3LaunchRoute
+  '/status': typeof StatusRouteWithChildren
+  '/status/api': typeof StatusApiRoute
   '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin/sync' | '/api/public/hooks/sync-tick'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/n3-launch'
+    | '/status'
+    | '/status/api'
+    | '/admin/sync'
+    | '/api/public/hooks/sync-tick'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin/sync' | '/api/public/hooks/sync-tick'
+  to:
+    | '/'
+    | '/auth'
+    | '/n3-launch'
+    | '/status'
+    | '/status/api'
+    | '/admin/sync'
+    | '/api/public/hooks/sync-tick'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/auth'
+    | '/n3-launch'
+    | '/status'
+    | '/status/api'
     | '/_authenticated/admin/sync'
     | '/api/public/hooks/sync-tick'
   fileRoutesById: FileRoutesById
@@ -67,11 +121,35 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  N3LaunchRoute: typeof N3LaunchRoute
+  StatusRoute: typeof StatusRouteWithChildren
   ApiPublicHooksSyncTickRoute: typeof ApiPublicHooksSyncTickRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/n3-launch': {
+      id: '/n3-launch'
+      path: '/n3-launch'
+      fullPath: '/n3-launch'
+      preLoaderRoute: typeof N3LaunchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -85,6 +163,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/status/api': {
+      id: '/status/api'
+      path: '/api'
+      fullPath: '/status/api'
+      preLoaderRoute: typeof StatusApiRouteImport
+      parentRoute: typeof StatusRoute
     }
     '/_authenticated/admin/sync': {
       id: '/_authenticated/admin/sync'
@@ -114,9 +199,23 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface StatusRouteChildren {
+  StatusApiRoute: typeof StatusApiRoute
+}
+
+const StatusRouteChildren: StatusRouteChildren = {
+  StatusApiRoute: StatusApiRoute,
+}
+
+const StatusRouteWithChildren =
+  StatusRoute._addFileChildren(StatusRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  N3LaunchRoute: N3LaunchRoute,
+  StatusRoute: StatusRouteWithChildren,
   ApiPublicHooksSyncTickRoute: ApiPublicHooksSyncTickRoute,
 }
 export const routeTree = rootRouteImport
