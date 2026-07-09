@@ -1,17 +1,19 @@
 /**
- * First-tenant bootstrap page.
+ * First-tenant bootstrap page — PUBLIC access only while `tenants` is empty.
  *
- * Only usable while the `tenants` table is empty. Creates the initial
- * tenant + owner `users_local` row for the currently signed-in user, then
- * redirects to the Sync Verification Console.
+ * Once the first tenant exists, this page refuses to render the form and
+ * directs the user to sign in as an administrator instead. The server
+ * function enforces the same gate, so this page cannot be abused after
+ * bootstrap.
  *
  * The raw N3 PAT is NEVER submitted here — only the *name* of the Lovable
  * Cloud secret that holds it.
  */
 
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   bootstrapFirstTenant,
   getBootstrapState,
@@ -19,7 +21,7 @@ import {
   type BootstrapState,
 } from "@/lib/bootstrap.functions";
 
-export const Route = createFileRoute("/_authenticated/admin/bootstrap")({
+export const Route = createFileRoute("/admin/bootstrap")({
   component: BootstrapPage,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
@@ -58,20 +60,17 @@ function BootstrapPage() {
   const [n3CompanyName, setN3CompanyName] = useState("");
   const [n3ApiKeyRef, setN3ApiKeyRef] = useState("N3_PAT_MUGS");
   const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [adminDisplayName, setAdminDisplayName] = useState("");
   const [adminN3UserId, setAdminN3UserId] = useState("");
   const [timezone, setTimezone] = useState("UTC");
 
   useEffect(() => {
     loadState()
-      .then((s) => {
-        setState(s);
-        if (s.currentUserEmail && !adminEmail) setAdminEmail(s.currentUserEmail);
-      })
+      .then((s) => setState(s))
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadState]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +84,25 @@ function BootstrapPage() {
           n3CompanyName: n3CompanyName || null,
           n3ApiKeyRef,
           adminEmail,
+          adminPassword,
           adminDisplayName: adminDisplayName || null,
           adminN3UserId: adminN3UserId || null,
           timezone: timezone || "UTC",
         },
       });
+      // Sign the freshly-provisioned admin in so /admin/sync opens directly.
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim().toLowerCase(),
+        password: adminPassword,
+      });
+      if (signInErr) {
+        // Bootstrap succeeded but auto-login failed — send to /auth.
+        setResult(r);
+        setErr(
+          `Tenant created, but automatic sign-in failed: ${signInErr.message}. Please sign in manually.`,
+        );
+        return;
+      }
       setResult(r);
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));
@@ -99,6 +112,29 @@ function BootstrapPage() {
   };
 
   if (loading) return <div className="p-8 text-sm text-gray-500">Loading…</div>;
+
+  // Gate: once a tenant exists, this page refuses to render the form.
+  if (state?.hasTenant && !result) {
+    return (
+      <div className="mx-auto max-w-2xl p-6">
+        <h1 className="text-2xl font-semibold">Bootstrap already completed</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          A tenant already exists ({state.tenantCount}). The first-tenant
+          bootstrap page is closed. Sign in as an administrator to manage the
+          system.
+        </p>
+        <div className="mt-6 flex gap-2">
+          <Link
+            to="/auth"
+            search={{ redirect: "/admin/sync", reason: "auth_required" as const }}
+            className="rounded bg-black px-3 py-1.5 text-sm text-white"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (result) {
     return (
@@ -114,7 +150,6 @@ function BootstrapPage() {
               ? "(secret found in environment)"
               : "(secret NOT found — add a Lovable Cloud Secret with this exact name before running sync)"}
           </li>
-          <li>{result.secretConfigured ? "✅" : "⏳"} Ready to run sync</li>
         </ul>
         <div className="mt-6 flex gap-2">
           <button
@@ -133,17 +168,10 @@ function BootstrapPage() {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold">Administrator Bootstrap</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Create the first ServiceHub tenant and link this signed-in account as
-          the owner.
+          Create the first ServiceHub tenant and its owner administrator
+          account. This page is open only until the first tenant exists.
         </p>
       </header>
-
-      {state && state.hasTenant && (
-        <div className="mb-4 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          A tenant already exists ({state.tenantCount}). First-tenant bootstrap
-          is disabled. Use the standard admin flow to add additional tenants.
-        </div>
-      )}
 
       <div className="mb-6 rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
         <p className="font-medium">Storing the N3 API key</p>
@@ -165,7 +193,7 @@ function BootstrapPage() {
       )}
 
       <form onSubmit={onSubmit} className="space-y-4">
-        <fieldset disabled={busy || (state?.hasTenant ?? false)} className="space-y-4">
+        <fieldset disabled={busy} className="space-y-4">
           <div>
             <label className="block text-sm font-medium">Company name *</label>
             <input
@@ -223,6 +251,21 @@ function BootstrapPage() {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium">
+                Admin password * <span className="text-xs text-gray-500">(min 8 chars)</span>
+              </label>
+              <input
+                className="mt-1 w-full rounded border px-3 py-1.5 text-sm"
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-medium">Admin display name</label>
               <input
                 className="mt-1 w-full rounded border px-3 py-1.5 text-sm"
@@ -230,8 +273,6 @@ function BootstrapPage() {
                 onChange={(e) => setAdminDisplayName(e.target.value)}
               />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium">Admin N3 user code</label>
               <input
@@ -241,14 +282,14 @@ function BootstrapPage() {
                 placeholder="Optional, e.g. USR001"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium">Timezone</label>
-              <input
-                className="mt-1 w-full rounded border px-3 py-1.5 text-sm"
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-              />
-            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Timezone</label>
+            <input
+              className="mt-1 w-full rounded border px-3 py-1.5 text-sm"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+            />
           </div>
 
           <button

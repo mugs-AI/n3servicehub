@@ -15,8 +15,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StatusApiRouteImport } from './routes/status.api'
+import { Route as AdminBootstrapRouteImport } from './routes/admin.bootstrap'
 import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
-import { Route as AuthenticatedAdminBootstrapRouteImport } from './routes/_authenticated/admin/bootstrap'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 
 const StatusRoute = StatusRouteImport.update({
@@ -48,17 +48,16 @@ const StatusApiRoute = StatusApiRouteImport.update({
   path: '/api',
   getParentRoute: () => StatusRoute,
 } as any)
+const AdminBootstrapRoute = AdminBootstrapRouteImport.update({
+  id: '/admin/bootstrap',
+  path: '/admin/bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminSyncRoute = AuthenticatedAdminSyncRouteImport.update({
   id: '/admin/sync',
   path: '/admin/sync',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminBootstrapRoute =
-  AuthenticatedAdminBootstrapRouteImport.update({
-    id: '/admin/bootstrap',
-    path: '/admin/bootstrap',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const ApiPublicHooksSyncTickRoute = ApiPublicHooksSyncTickRouteImport.update({
   id: '/api/public/hooks/sync-tick',
   path: '/api/public/hooks/sync-tick',
@@ -70,8 +69,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
+  '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
-  '/admin/bootstrap': typeof AuthenticatedAdminBootstrapRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
@@ -80,8 +79,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
+  '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
-  '/admin/bootstrap': typeof AuthenticatedAdminBootstrapRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
@@ -92,8 +91,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
+  '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
-  '/_authenticated/admin/bootstrap': typeof AuthenticatedAdminBootstrapRoute
   '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
 }
@@ -104,8 +103,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/n3-launch'
     | '/status'
-    | '/status/api'
     | '/admin/bootstrap'
+    | '/status/api'
     | '/admin/sync'
     | '/api/public/hooks/sync-tick'
   fileRoutesByTo: FileRoutesByTo
@@ -114,8 +113,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/n3-launch'
     | '/status'
-    | '/status/api'
     | '/admin/bootstrap'
+    | '/status/api'
     | '/admin/sync'
     | '/api/public/hooks/sync-tick'
   id:
@@ -125,8 +124,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/n3-launch'
     | '/status'
+    | '/admin/bootstrap'
     | '/status/api'
-    | '/_authenticated/admin/bootstrap'
     | '/_authenticated/admin/sync'
     | '/api/public/hooks/sync-tick'
   fileRoutesById: FileRoutesById
@@ -137,6 +136,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   N3LaunchRoute: typeof N3LaunchRoute
   StatusRoute: typeof StatusRouteWithChildren
+  AdminBootstrapRoute: typeof AdminBootstrapRoute
   ApiPublicHooksSyncTickRoute: typeof ApiPublicHooksSyncTickRoute
 }
 
@@ -184,18 +184,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusApiRouteImport
       parentRoute: typeof StatusRoute
     }
+    '/admin/bootstrap': {
+      id: '/admin/bootstrap'
+      path: '/admin/bootstrap'
+      fullPath: '/admin/bootstrap'
+      preLoaderRoute: typeof AdminBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/sync': {
       id: '/_authenticated/admin/sync'
       path: '/admin/sync'
       fullPath: '/admin/sync'
       preLoaderRoute: typeof AuthenticatedAdminSyncRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/bootstrap': {
-      id: '/_authenticated/admin/bootstrap'
-      path: '/admin/bootstrap'
-      fullPath: '/admin/bootstrap'
-      preLoaderRoute: typeof AuthenticatedAdminBootstrapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/sync-tick': {
@@ -209,12 +209,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminBootstrapRoute: typeof AuthenticatedAdminBootstrapRoute
   AuthenticatedAdminSyncRoute: typeof AuthenticatedAdminSyncRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminBootstrapRoute: AuthenticatedAdminBootstrapRoute,
   AuthenticatedAdminSyncRoute: AuthenticatedAdminSyncRoute,
 }
 
@@ -238,6 +236,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   N3LaunchRoute: N3LaunchRoute,
   StatusRoute: StatusRouteWithChildren,
+  AdminBootstrapRoute: AdminBootstrapRoute,
   ApiPublicHooksSyncTickRoute: ApiPublicHooksSyncTickRoute,
 }
 export const routeTree = rootRouteImport
