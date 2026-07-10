@@ -64,6 +64,47 @@ export type Database = {
           },
         ]
       }
+      adhoc_stock_mapping: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          service_type: string
+          stock_code: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          service_type?: string
+          stock_code: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          service_type?: string
+          stock_code?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adhoc_stock_mapping_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_contract_snapshots: {
         Row: {
           contract_days: number | null
@@ -127,6 +168,44 @@ export type Database = {
             foreignKeyName: "customer_contract_snapshots_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      general_settings: {
+        Row: {
+          created_at: string
+          due_soon_days: number
+          job_prefix: string
+          notification_enabled: boolean
+          tenant_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_soon_days?: number
+          job_prefix?: string
+          notification_enabled?: boolean
+          tenant_id: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_soon_days?: number
+          job_prefix?: string
+          notification_enabled?: boolean
+          tenant_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "general_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -544,6 +623,50 @@ export type Database = {
           },
           {
             foreignKeyName: "renewal_mapping_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_stock_mapping: {
+        Row: {
+          contract_days: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          service_type: string
+          stock_code: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          contract_days: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          service_type?: string
+          stock_code: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          contract_days?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          service_type?: string
+          stock_code?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_stock_mapping_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
