@@ -106,7 +106,9 @@ export const listStockOptions = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await q;
     if (error) throw error;
-    return (rows ?? []).map((r) => ({ code: r.n3_code, description: r.description }));
+    return (rows ?? [])
+      .filter((r): r is { n3_code: string; description: string | null } => !!r.n3_code)
+      .map((r) => ({ code: r.n3_code, description: r.description }));
   });
 
 // ---------- Renewal stock mapping ----------
@@ -303,14 +305,14 @@ export const getGeneralSettings = createServerFn({ method: "POST" })
         .single();
       if (iErr) throw iErr;
       return {
-        dueSoonDays: inserted.due_soon_days,
+        dueSoonDays: inserted.due_soon_days as GeneralSettings["dueSoonDays"],
         jobPrefix: inserted.job_prefix,
         timezone: inserted.timezone,
         notificationEnabled: inserted.notification_enabled,
       };
     }
     return {
-      dueSoonDays: row.due_soon_days,
+      dueSoonDays: row.due_soon_days as GeneralSettings["dueSoonDays"],
       jobPrefix: row.job_prefix,
       timezone: row.timezone,
       notificationEnabled: row.notification_enabled,
@@ -329,7 +331,11 @@ export const updateGeneralSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      due_soon_days?: number;
+      job_prefix?: string;
+      notification_enabled?: boolean;
+    } = {};
     if (data.dueSoonDays !== undefined) patch.due_soon_days = data.dueSoonDays;
     if (data.jobPrefix !== undefined) {
       const p = data.jobPrefix.trim().toUpperCase();
