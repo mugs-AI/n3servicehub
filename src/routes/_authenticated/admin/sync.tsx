@@ -1,8 +1,6 @@
 /**
- * Admin verification console for the N3 synchronization layer.
- *
- * Read-only status view + manual "sync now" trigger. Admin/owner only —
- * enforced server-side in the underlying server functions.
+ * Admin verification console for the N3 synchronization layer +
+ * Customer Contract Status Engine (Milestone 1.3).
  */
 
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -15,6 +13,13 @@ import {
   type SyncStatusReport,
   type SyncStatusEntity,
 } from "@/lib/sync.functions";
+import {
+  getContractStatusSummary,
+  listContractSnapshots,
+  recalculateContractStatus,
+  type ContractStatusSummary,
+  type ContractSnapshotRow,
+} from "@/lib/contract-status.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/sync")({
   component: SyncConsole,
