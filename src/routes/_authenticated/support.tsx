@@ -415,20 +415,10 @@ function OperationalCards({
               <div className="mt-1 text-2xl font-semibold">
                 {loading ? "…" : it.value}
               </div>
-              {it.jobs && (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  Jobs management will be available in Milestone 1.5.
-                </p>
-              )}
             </CardContent>
           </Card>
         ))}
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">
-        <Link to="/admin/dev/sync" className="underline">
-          Administrator Verification Console
-        </Link>
-      </p>
     </section>
   );
 }
