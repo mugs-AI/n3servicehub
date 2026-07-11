@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
+import { Route as AdminDevN3ConnectRouteImport } from './routes/admin.dev.n3-connect'
 import { Route as AdminDevBootstrapRouteImport } from './routes/admin.dev.bootstrap'
 import { Route as AuthenticatedJobsQuickRouteImport } from './routes/_authenticated/jobs.quick'
 import { Route as AuthenticatedJobsNewRouteImport } from './routes/_authenticated/jobs.new'
@@ -60,6 +61,11 @@ const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
   id: '/jobs/',
   path: '/jobs/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AdminDevN3ConnectRoute = AdminDevN3ConnectRouteImport.update({
+  id: '/admin/dev/n3-connect',
+  path: '/admin/dev/n3-connect',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDevBootstrapRoute = AdminDevBootstrapRouteImport.update({
   id: '/admin/dev/bootstrap',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
+  '/admin/dev/n3-connect': typeof AdminDevN3ConnectRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
   '/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
   '/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
+  '/admin/dev/n3-connect': typeof AdminDevN3ConnectRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
   '/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
   '/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/_authenticated/jobs/new': typeof AuthenticatedJobsNewRoute
   '/_authenticated/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
+  '/admin/dev/n3-connect': typeof AdminDevN3ConnectRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
   '/_authenticated/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
   '/_authenticated/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/jobs/new'
     | '/jobs/quick'
     | '/admin/dev/bootstrap'
+    | '/admin/dev/n3-connect'
     | '/jobs/'
     | '/admin/dev/status'
     | '/admin/dev/sync'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/jobs/new'
     | '/jobs/quick'
     | '/admin/dev/bootstrap'
+    | '/admin/dev/n3-connect'
     | '/jobs'
     | '/admin/dev/status'
     | '/admin/dev/sync'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs/new'
     | '/_authenticated/jobs/quick'
     | '/admin/dev/bootstrap'
+    | '/admin/dev/n3-connect'
     | '/_authenticated/jobs/'
     | '/_authenticated/admin/dev/status'
     | '/_authenticated/admin/dev/sync'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   N3LaunchRoute: typeof N3LaunchRoute
   AdminDevBootstrapRoute: typeof AdminDevBootstrapRoute
+  AdminDevN3ConnectRoute: typeof AdminDevN3ConnectRoute
   ApiPublicHooksSyncTickRoute: typeof ApiPublicHooksSyncTickRoute
 }
 
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/jobs/'
       preLoaderRoute: typeof AuthenticatedJobsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/dev/n3-connect': {
+      id: '/admin/dev/n3-connect'
+      path: '/admin/dev/n3-connect'
+      fullPath: '/admin/dev/n3-connect'
+      preLoaderRoute: typeof AdminDevN3ConnectRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/dev/bootstrap': {
       id: '/admin/dev/bootstrap'
@@ -426,6 +446,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   N3LaunchRoute: N3LaunchRoute,
   AdminDevBootstrapRoute: AdminDevBootstrapRoute,
+  AdminDevN3ConnectRoute: AdminDevN3ConnectRoute,
   ApiPublicHooksSyncTickRoute: ApiPublicHooksSyncTickRoute,
 }
 export const routeTree = rootRouteImport
