@@ -204,9 +204,10 @@ export const updateReportAccess = createServerFn({ method: "POST" })
       "is_active",
     ];
     if (!allowed.includes(data.field)) throw new Error("Invalid field");
+    const patch: Partial<Record<ReportAccessField, boolean>> = { [data.field]: data.value };
     const { error } = await context.supabase
       .from("report_access_rules")
-      .update({ [data.field]: data.value })
+      .update(patch)
       .eq("id", data.id)
       .eq("tenant_id", data.tenantId);
     if (error) throw error;
