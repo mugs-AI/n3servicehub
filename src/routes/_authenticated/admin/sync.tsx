@@ -319,6 +319,15 @@ function SyncConsole() {
             </button>
           </div>
 
+          {contractSummary.configError && (
+            <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <strong>Configuration error:</strong> {contractSummary.configError} Snapshots are
+              kept stale until this is fixed. Open{" "}
+              <a className="underline" href="/settings">Settings → General</a> to configure Due
+              Soon days.
+            </div>
+          )}
+
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             <StatCard label="Customers" value={contractSummary.totalCustomers} />
             <StatCard label="Snapshots" value={contractSummary.snapshotCount} />
