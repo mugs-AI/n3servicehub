@@ -594,40 +594,65 @@ function AttachmentsPanel({
   }
 
   return (
-    <div className="space-y-3">
-      <Input
-        type="file"
-        disabled={busy}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void upload(f);
-          e.target.value = "";
-        }}
-      />
-      {err && <p className="text-sm text-destructive">{err}</p>}
-      <div className="space-y-1">
-        {list.data?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No attachments.</p>
-        )}
-        {list.data?.map((a) => (
-          <div key={a.id} className="flex items-center justify-between rounded border p-2 text-sm">
-            <div>
-              <div>{a.fileName}</div>
-              <div className="text-xs text-muted-foreground">
-                {a.uploadedByName ?? "—"} · {new Date(a.createdAt).toLocaleString()}
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                const { url } = await signFn({ data: { tenantId, storagePath: a.storagePath } });
-                window.open(url, "_blank");
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 py-6 text-center text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground">
+            <Upload className="h-5 w-5" aria-hidden />
+            <span>{busy ? "Uploading…" : "Click to upload a file"}</span>
+            <span className="text-xs">Photos, PDFs, or documents</span>
+            <input
+              type="file"
+              className="hidden"
+              disabled={busy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void upload(f);
+                e.target.value = "";
               }}
-            >
-              Open
-            </Button>
-          </div>
+            />
+          </label>
+          {err && (
+            <p className="mt-2 flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" /> {err}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {list.data?.length === 0 && (
+        <EmptyState
+          icon={<Paperclip className="h-5 w-5" />}
+          title="No attachments uploaded"
+          hint="Upload photos, PDFs or supporting documents."
+        />
+      )}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {list.data?.map((a) => (
+          <Card key={a.id}>
+            <CardContent className="flex items-center gap-3 p-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                <FileText className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{a.fileName}</div>
+                <div className="truncate text-[11px] text-muted-foreground">
+                  {a.uploadedByName ?? "—"} · {new Date(a.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label="Download attachment"
+                onClick={async () => {
+                  const { url } = await signFn({ data: { tenantId, storagePath: a.storagePath } });
+                  window.open(url, "_blank");
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
@@ -642,26 +667,39 @@ function ActivityPanel({ tenantId, jobId }: { tenantId: string; jobId: string })
     queryFn: () => listFn({ data: { tenantId, jobId } }),
   });
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {list.data?.length === 0 && (
-        <p className="text-sm text-muted-foreground">No activity yet.</p>
+        <EmptyState
+          icon={<ActivityIcon className="h-5 w-5" />}
+          title="No activity yet"
+        />
       )}
       {list.data?.map((a) => (
-        <div key={a.id} className="rounded border p-2 text-xs">
-          <div className="font-medium">{a.action.replace(/_/g, " ")}</div>
-          <div className="text-muted-foreground">
-            {a.userCode ?? "system"} · {new Date(a.createdAt).toLocaleString()}
-          </div>
-          {(a.before || a.after) && (
-            <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] text-muted-foreground">
-              {JSON.stringify({ before: a.before, after: a.after }, null, 2)}
-            </pre>
-          )}
-        </div>
+        <Card key={a.id}>
+          <CardContent className="p-3 text-xs">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-sm font-medium">
+                {a.action.replace(/_/g, " ")}
+              </span>
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                {new Date(a.createdAt).toLocaleString()}
+              </span>
+            </div>
+            <div className="mt-0.5 text-muted-foreground">
+              by {a.userCode ?? "system"}
+            </div>
+            {(a.before || a.after) && (
+              <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/50 p-2 text-[10px] text-muted-foreground">
+                {JSON.stringify({ before: a.before, after: a.after }, null, 2)}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
       ))}
     </div>
   );
 }
+
 
 // ---------- Actions ----------
 function ActionsPanel({
