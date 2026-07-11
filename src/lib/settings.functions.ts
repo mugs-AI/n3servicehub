@@ -340,7 +340,13 @@ export const updateGeneralSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      due_soon_days?: number;
+      job_prefix?: string;
+      notification_enabled?: boolean;
+      assigned_user_label?: string;
+      job_assignment_mode?: JobAssignmentMode;
+    } = {};
     if (data.dueSoonDays !== undefined) patch.due_soon_days = data.dueSoonDays;
     if (data.jobPrefix !== undefined) {
       const p = data.jobPrefix.trim().toUpperCase();
