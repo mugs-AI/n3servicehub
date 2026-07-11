@@ -154,11 +154,14 @@ function SettingsPage() {
 
       {tenantId && (
         <Tabs defaultValue="n3" className="w-full">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="n3">N3 Integration</TabsTrigger>
             <TabsTrigger value="renewal">Renewal Settings</TabsTrigger>
             <TabsTrigger value="adhoc">Ad Hoc Service</TabsTrigger>
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="approval">Approval Rules</TabsTrigger>
+            <TabsTrigger value="profiles">Access Profiles</TabsTrigger>
+            <TabsTrigger value="reports">Report Access</TabsTrigger>
           </TabsList>
           <TabsContent value="n3" className="mt-4">
             <N3Tab tenantId={tenantId} />
@@ -171,6 +174,15 @@ function SettingsPage() {
           </TabsContent>
           <TabsContent value="general" className="mt-4">
             <GeneralTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="approval" className="mt-4">
+            <ApprovalRulesTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="profiles" className="mt-4">
+            <AccessProfilesTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="reports" className="mt-4">
+            <ReportAccessTab tenantId={tenantId} />
           </TabsContent>
         </Tabs>
       )}
