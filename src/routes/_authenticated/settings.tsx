@@ -56,6 +56,21 @@ import {
   type AdhocMappingRow,
   type GeneralSettings,
 } from "@/lib/settings.functions";
+import {
+  listApprovalRules,
+  updateApprovalRule,
+  listAccessPermissions,
+  updateAccessPermission,
+  listReportAccess,
+  updateReportAccess,
+  type ApprovalRuleRow,
+  type CustomerStatus,
+  type InitialJobStatus,
+  type PermissionRow,
+  type ProfileCode,
+  type ReportAccessRow,
+  type ReportAccessField,
+} from "@/lib/access-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
