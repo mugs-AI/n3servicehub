@@ -279,12 +279,31 @@ export const setAdhocMappingActive = createServerFn({ method: "POST" })
 
 // ---------- General settings ----------
 
+export type JobAssignmentMode = "auto_assign_creator" | "leave_unassigned" | "select_each_time";
+
 export type GeneralSettings = {
   dueSoonDays: 30 | 45 | 60 | 90;
   jobPrefix: string;
   timezone: string;
   notificationEnabled: boolean;
+  assignedUserLabel: string;
+  jobAssignmentMode: JobAssignmentMode;
 };
+
+const GENERAL_COLS =
+  "due_soon_days, job_prefix, timezone, notification_enabled, assigned_user_label, job_assignment_mode";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapGeneral(row: any): GeneralSettings {
+  return {
+    dueSoonDays: row.due_soon_days as GeneralSettings["dueSoonDays"],
+    jobPrefix: row.job_prefix,
+    timezone: row.timezone,
+    notificationEnabled: row.notification_enabled,
+    assignedUserLabel: row.assigned_user_label ?? "Engineer",
+    jobAssignmentMode: (row.job_assignment_mode ?? "auto_assign_creator") as JobAssignmentMode,
+  };
+}
 
 export const getGeneralSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -293,30 +312,18 @@ export const getGeneralSettings = createServerFn({ method: "POST" })
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
     const { data: row, error } = await context.supabase
       .from("general_settings")
-      .select("due_soon_days, job_prefix, timezone, notification_enabled")
+      .select(GENERAL_COLS)
       .eq("tenant_id", data.tenantId)
       .maybeSingle();
     if (error) throw error;
-    if (!row) {
-      const { data: inserted, error: iErr } = await context.supabase
-        .from("general_settings")
-        .insert({ tenant_id: data.tenantId })
-        .select("due_soon_days, job_prefix, timezone, notification_enabled")
-        .single();
-      if (iErr) throw iErr;
-      return {
-        dueSoonDays: inserted.due_soon_days as GeneralSettings["dueSoonDays"],
-        jobPrefix: inserted.job_prefix,
-        timezone: inserted.timezone,
-        notificationEnabled: inserted.notification_enabled,
-      };
-    }
-    return {
-      dueSoonDays: row.due_soon_days as GeneralSettings["dueSoonDays"],
-      jobPrefix: row.job_prefix,
-      timezone: row.timezone,
-      notificationEnabled: row.notification_enabled,
-    };
+    if (row) return mapGeneral(row);
+    const { data: inserted, error: iErr } = await context.supabase
+      .from("general_settings")
+      .insert({ tenant_id: data.tenantId })
+      .select(GENERAL_COLS)
+      .single();
+    if (iErr) throw iErr;
+    return mapGeneral(inserted);
   });
 
 export const updateGeneralSettings = createServerFn({ method: "POST" })
@@ -327,15 +334,13 @@ export const updateGeneralSettings = createServerFn({ method: "POST" })
       dueSoonDays?: 30 | 45 | 60 | 90;
       jobPrefix?: string;
       notificationEnabled?: boolean;
+      assignedUserLabel?: string;
+      jobAssignmentMode?: JobAssignmentMode;
     }) => i,
   )
   .handler(async ({ data, context }) => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
-    const patch: {
-      due_soon_days?: number;
-      job_prefix?: string;
-      notification_enabled?: boolean;
-    } = {};
+    const patch: Record<string, unknown> = {};
     if (data.dueSoonDays !== undefined) patch.due_soon_days = data.dueSoonDays;
     if (data.jobPrefix !== undefined) {
       const p = data.jobPrefix.trim().toUpperCase();
@@ -343,6 +348,16 @@ export const updateGeneralSettings = createServerFn({ method: "POST" })
       patch.job_prefix = p;
     }
     if (data.notificationEnabled !== undefined) patch.notification_enabled = data.notificationEnabled;
+    if (data.assignedUserLabel !== undefined) {
+      const l = data.assignedUserLabel.trim();
+      if (!l || l.length > 40) throw new Error("Assigned user label must be 1–40 characters");
+      patch.assigned_user_label = l;
+    }
+    if (data.jobAssignmentMode !== undefined) {
+      const modes: JobAssignmentMode[] = ["auto_assign_creator", "leave_unassigned", "select_each_time"];
+      if (!modes.includes(data.jobAssignmentMode)) throw new Error("Invalid job assignment mode");
+      patch.job_assignment_mode = data.jobAssignmentMode;
+    }
     const { error } = await context.supabase
       .from("general_settings")
       .update(patch)
@@ -350,3 +365,31 @@ export const updateGeneralSettings = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+/** Member-scoped read for workspace UI (any active tenant member). */
+export const getWorkspaceSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { tenantId: string }) => i)
+  .handler(
+    async ({ data, context }): Promise<{ assignedUserLabel: string; jobAssignmentMode: JobAssignmentMode }> => {
+      const { data: m, error: mErr } = await context.supabase
+        .from("users_local")
+        .select("id")
+        .eq("auth_user_id", context.userId)
+        .eq("tenant_id", data.tenantId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (mErr) throw mErr;
+      if (!m) throw new Error("Forbidden");
+      const { data: row } = await context.supabase
+        .from("general_settings")
+        .select("assigned_user_label, job_assignment_mode")
+        .eq("tenant_id", data.tenantId)
+        .maybeSingle();
+      return {
+        assignedUserLabel: row?.assigned_user_label ?? "Engineer",
+        jobAssignmentMode:
+          (row?.job_assignment_mode ?? "auto_assign_creator") as JobAssignmentMode,
+      };
+    },
+  );
