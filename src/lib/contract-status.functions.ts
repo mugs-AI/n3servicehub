@@ -29,6 +29,18 @@ export type ContractStatusSummary = {
   staleCount: number;
   failedCount: number;
   lastCalculatedAt: string | null;
+  configError: string | null;
+};
+
+export type ParsingDiagnosticRow = {
+  source: "sales_invoice" | "delivery_order";
+  docId: string;
+  docNo: string | null;
+  docDate: string | null;
+  customerCode: string | null;
+  reason: string;
+  lineCount: number;
+  missingStockCount: number;
 };
 
 export const getContractStatusSummary = createServerFn({ method: "POST" })
