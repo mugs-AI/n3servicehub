@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_profile_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          is_allowed: boolean
+          permission_code: string
+          profile_code: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_allowed?: boolean
+          permission_code: string
+          profile_code: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_allowed?: boolean
+          permission_code?: string
+          profile_code?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_profile_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_logs: {
         Row: {
           action: string
@@ -98,6 +136,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "adhoc_stock_mapping_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_rules: {
+        Row: {
+          approval_required: boolean
+          can_create_job: boolean
+          created_at: string
+          customer_status: string
+          id: string
+          initial_job_status: string
+          is_active: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approval_required?: boolean
+          can_create_job?: boolean
+          created_at?: string
+          customer_status: string
+          id?: string
+          initial_job_status: string
+          is_active?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approval_required?: boolean
+          can_create_job?: boolean
+          created_at?: string
+          customer_status?: string
+          id?: string
+          initial_job_status?: string
+          is_active?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_rules_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -376,6 +458,13 @@ export type Database = {
           tenant_id: string
           title: string
           updated_at: string
+          vendor_follow_up_date: string | null
+          vendor_name: string | null
+          vendor_referral_required: boolean
+          vendor_referred_at: string | null
+          vendor_resolution: string | null
+          vendor_status: string | null
+          vendor_ticket_number: string | null
         }
         Insert: {
           actual_end?: string | null
@@ -408,6 +497,13 @@ export type Database = {
           tenant_id: string
           title: string
           updated_at?: string
+          vendor_follow_up_date?: string | null
+          vendor_name?: string | null
+          vendor_referral_required?: boolean
+          vendor_referred_at?: string | null
+          vendor_resolution?: string | null
+          vendor_status?: string | null
+          vendor_ticket_number?: string | null
         }
         Update: {
           actual_end?: string | null
@@ -440,6 +536,13 @@ export type Database = {
           tenant_id?: string
           title?: string
           updated_at?: string
+          vendor_follow_up_date?: string | null
+          vendor_name?: string | null
+          vendor_referral_required?: boolean
+          vendor_referred_at?: string | null
+          vendor_resolution?: string | null
+          vendor_status?: string | null
+          vendor_ticket_number?: string | null
         }
         Relationships: [
           {
@@ -667,6 +770,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "renewal_stock_mapping_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_access_rules: {
+        Row: {
+          allow_excel_engineer: boolean
+          allow_excel_support: boolean
+          allow_print_engineer: boolean
+          allow_print_support: boolean
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          report_code: string
+          report_name: string
+          tenant_id: string
+          updated_at: string
+          visible_to_engineer: boolean
+          visible_to_support: boolean
+        }
+        Insert: {
+          allow_excel_engineer?: boolean
+          allow_excel_support?: boolean
+          allow_print_engineer?: boolean
+          allow_print_support?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          report_code: string
+          report_name: string
+          tenant_id: string
+          updated_at?: string
+          visible_to_engineer?: boolean
+          visible_to_support?: boolean
+        }
+        Update: {
+          allow_excel_engineer?: boolean
+          allow_excel_support?: boolean
+          allow_print_engineer?: boolean
+          allow_print_support?: boolean
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          report_code?: string
+          report_name?: string
+          tenant_id?: string
+          updated_at?: string
+          visible_to_engineer?: boolean
+          visible_to_support?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_access_rules_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1218,6 +1380,10 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_member: { Args: { _tenant_id: string }; Returns: boolean }
+      seed_tenant_access_defaults: {
+        Args: { _tenant_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       notification_type:

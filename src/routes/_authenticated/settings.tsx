@@ -56,6 +56,21 @@ import {
   type AdhocMappingRow,
   type GeneralSettings,
 } from "@/lib/settings.functions";
+import {
+  listApprovalRules,
+  updateApprovalRule,
+  listAccessPermissions,
+  updateAccessPermission,
+  listReportAccess,
+  updateReportAccess,
+  type ApprovalRuleRow,
+  type CustomerStatus,
+  type InitialJobStatus,
+  type PermissionRow,
+  type ProfileCode,
+  type ReportAccessRow,
+  type ReportAccessField,
+} from "@/lib/access-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -139,11 +154,14 @@ function SettingsPage() {
 
       {tenantId && (
         <Tabs defaultValue="n3" className="w-full">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="n3">N3 Integration</TabsTrigger>
             <TabsTrigger value="renewal">Renewal Settings</TabsTrigger>
             <TabsTrigger value="adhoc">Ad Hoc Service</TabsTrigger>
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="approval">Approval Rules</TabsTrigger>
+            <TabsTrigger value="profiles">Access Profiles</TabsTrigger>
+            <TabsTrigger value="reports">Report Access</TabsTrigger>
           </TabsList>
           <TabsContent value="n3" className="mt-4">
             <N3Tab tenantId={tenantId} />
@@ -156,6 +174,15 @@ function SettingsPage() {
           </TabsContent>
           <TabsContent value="general" className="mt-4">
             <GeneralTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="approval" className="mt-4">
+            <ApprovalRulesTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="profiles" className="mt-4">
+            <AccessProfilesTab tenantId={tenantId} />
+          </TabsContent>
+          <TabsContent value="reports" className="mt-4">
+            <ReportAccessTab tenantId={tenantId} />
           </TabsContent>
         </Tabs>
       )}
@@ -842,5 +869,341 @@ function GeneralTab({ tenantId }: { tenantId: string }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// -------------- Tab 5: Approval Rules --------------
+
+const CUSTOMER_STATUS_LABEL: Record<CustomerStatus, string> = {
+  active: "Active",
+  due_soon: "Due Soon",
+  overdue: "Overdue",
+  suspended: "Suspended",
+  unknown: "Unknown",
+};
+
+function ApprovalRulesTab({ tenantId }: { tenantId: string }) {
+  const listFn = useServerFn(listApprovalRules);
+  const update = useServerFn(updateApprovalRule);
+  const [rows, setRows] = useState<ApprovalRuleRow[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  const reload = () => {
+    listFn({ data: { tenantId } })
+      .then(setRows)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+  };
+  useEffect(reload, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const patch = async (
+    id: string,
+    p: { initialJobStatus?: InitialJobStatus; approvalRequired?: boolean; isActive?: boolean },
+  ) => {
+    try {
+      await update({ data: { tenantId, id, ...p } });
+      reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Approval Rules</CardTitle>
+        <CardDescription>
+          Determines the initial job status and approval requirement based on the customer's
+          contract status. Support may always record a request; jobs for Overdue, Suspended, or
+          Unknown customers default to Draft and require approval before work proceeds.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {err && <p className="mb-2 text-sm text-destructive">{err}</p>}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Customer Status</TableHead>
+              <TableHead className="w-24">Can Create</TableHead>
+              <TableHead className="w-40">Initial Job Status</TableHead>
+              <TableHead className="w-40">Approval Required</TableHead>
+              <TableHead className="w-24">Active</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="font-medium">
+                  {CUSTOMER_STATUS_LABEL[r.customerStatus]}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={r.canCreateJob ? "secondary" : "outline"}>
+                    {r.canCreateJob ? "Yes" : "No"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={r.initialJobStatus}
+                    onValueChange={(v) =>
+                      patch(r.id, { initialJobStatus: v as InitialJobStatus })
+                    }
+                  >
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Switch
+                    checked={r.approvalRequired}
+                    onCheckedChange={(v) => patch(r.id, { approvalRequired: v })}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Switch
+                    checked={r.isActive}
+                    onCheckedChange={(v) => patch(r.id, { isActive: v })}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+// -------------- Tab 6: Access Profiles --------------
+
+const PERMISSION_LABELS: Record<string, string> = {
+  view_support_dashboard: "View Support Dashboard",
+  view_engineer_dashboard: "View Engineer Dashboard",
+  search_customers: "Search Customers",
+  view_customer_contract_status: "View Customer Contract Status",
+  create_standard_job: "Create Standard Job",
+  create_quick_job: "Create Quick Job",
+  view_all_jobs: "View All Jobs",
+  view_my_jobs: "View My Jobs",
+  edit_jobs: "Edit Jobs",
+  update_assigned_jobs: "Update Assigned Jobs",
+  reassign_engineer: "Reassign Engineer",
+  add_job_comments: "Add Job Comments",
+  upload_attachments: "Upload Attachments",
+  mark_waiting_customer: "Mark Waiting Customer",
+  mark_waiting_vendor: "Mark Waiting Vendor",
+  complete_job: "Complete Job",
+  complete_assigned_job: "Complete Assigned Job",
+  cancel_job: "Cancel Job",
+  view_calendar: "View Calendar",
+  view_reports: "View Authorized Reports",
+  print_reports: "Print Authorized Reports",
+  export_reports_excel: "Export Authorized Reports to Excel",
+  job_approval: "Job Approval",
+  settings: "Settings",
+  n3_writeback: "N3 Write-back",
+  pricing: "Pricing",
+};
+
+const ADMIN_PERMISSIONS = [
+  "Admin Dashboard",
+  "Support Dashboard",
+  "Customer Search",
+  "All Jobs",
+  "Job Approval",
+  "Engineer Reassignment",
+  "Settings",
+  "N3 Integration",
+  "Renewal Mapping",
+  "Ad Hoc Mapping",
+  "Reports",
+  "Report Access Configuration",
+  "Activity Logs",
+  "Sync Verification Console",
+];
+
+function AccessProfilesTab({ tenantId }: { tenantId: string }) {
+  const listFn = useServerFn(listAccessPermissions);
+  const update = useServerFn(updateAccessPermission);
+  const [rows, setRows] = useState<PermissionRow[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  const reload = () => {
+    listFn({ data: { tenantId } })
+      .then(setRows)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+  };
+  useEffect(reload, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggle = async (id: string, isAllowed: boolean) => {
+    try {
+      await update({ data: { tenantId, id, isAllowed } });
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, isAllowed } : r)));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const forProfile = (p: ProfileCode) =>
+    rows
+      .filter((r) => r.profileCode === p)
+      .sort((a, b) =>
+        (PERMISSION_LABELS[a.permissionCode] ?? a.permissionCode).localeCompare(
+          PERMISSION_LABELS[b.permissionCode] ?? b.permissionCode,
+        ),
+      );
+
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Administrator</CardTitle>
+          <CardDescription>Fixed profile — always full access.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-1 text-sm">
+            {ADMIN_PERMISSIONS.map((p) => (
+              <li key={p} className="flex items-center justify-between">
+                <span>{p}</span>
+                <Badge variant="secondary">Always</Badge>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
+      {(["support", "engineer"] as ProfileCode[]).map((profile) => (
+        <Card key={profile}>
+          <CardHeader>
+            <CardTitle className="capitalize">{profile}</CardTitle>
+            <CardDescription>
+              Toggle permissions granted to {profile} users in this tenant.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {err && <p className="mb-2 text-sm text-destructive">{err}</p>}
+            <ul className="space-y-2 text-sm">
+              {forProfile(profile).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3">
+                  <span>{PERMISSION_LABELS[r.permissionCode] ?? r.permissionCode}</span>
+                  <Switch
+                    checked={r.isAllowed}
+                    onCheckedChange={(v) => toggle(r.id, v)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// -------------- Tab 7: Report Access --------------
+
+function ReportAccessTab({ tenantId }: { tenantId: string }) {
+  const listFn = useServerFn(listReportAccess);
+  const update = useServerFn(updateReportAccess);
+  const [rows, setRows] = useState<ReportAccessRow[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+
+  const reload = () => {
+    listFn({ data: { tenantId } })
+      .then(setRows)
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+  };
+  useEffect(reload, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = async (id: string, field: ReportAccessField, value: boolean) => {
+    try {
+      await update({ data: { tenantId, id, field, value } });
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          switch (field) {
+            case "visible_to_support": return { ...r, visibleToSupport: value };
+            case "visible_to_engineer": return { ...r, visibleToEngineer: value };
+            case "allow_print_support": return { ...r, allowPrintSupport: value };
+            case "allow_print_engineer": return { ...r, allowPrintEngineer: value };
+            case "allow_excel_support": return { ...r, allowExcelSupport: value };
+            case "allow_excel_engineer": return { ...r, allowExcelEngineer: value };
+            case "is_active": return { ...r, isActive: value };
+          }
+        }),
+      );
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Report Access</CardTitle>
+        <CardDescription>
+          Administrators always see every report. Choose which reports appear on the Support and
+          Engineer dashboards, and whether each role can print or export to Excel.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {err && <p className="mb-2 text-sm text-destructive">{err}</p>}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report</TableHead>
+                <TableHead className="text-center">Support: View</TableHead>
+                <TableHead className="text-center">Support: Print</TableHead>
+                <TableHead className="text-center">Support: Excel</TableHead>
+                <TableHead className="text-center">Engineer: View</TableHead>
+                <TableHead className="text-center">Engineer: Print</TableHead>
+                <TableHead className="text-center">Engineer: Excel</TableHead>
+                <TableHead className="text-center">Active</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>
+                    <div className="font-medium">{r.reportName}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{r.reportCode}</div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.visibleToSupport}
+                      onCheckedChange={(v) => set(r.id, "visible_to_support", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.allowPrintSupport} disabled={!r.visibleToSupport}
+                      onCheckedChange={(v) => set(r.id, "allow_print_support", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.allowExcelSupport} disabled={!r.visibleToSupport}
+                      onCheckedChange={(v) => set(r.id, "allow_excel_support", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.visibleToEngineer}
+                      onCheckedChange={(v) => set(r.id, "visible_to_engineer", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.allowPrintEngineer} disabled={!r.visibleToEngineer}
+                      onCheckedChange={(v) => set(r.id, "allow_print_engineer", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.allowExcelEngineer} disabled={!r.visibleToEngineer}
+                      onCheckedChange={(v) => set(r.id, "allow_excel_engineer", v)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Switch checked={r.isActive}
+                      onCheckedChange={(v) => set(r.id, "is_active", v)} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
