@@ -1,5 +1,6 @@
 /**
  * Milestone 1.5 — Job Detail & workflow.
+ * Milestone 1.5.1 — UI polish only. Business logic unchanged.
  */
 
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -56,6 +57,31 @@ import {
   listJobActivity,
 } from "@/lib/jobs-workspace.functions";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  StatusBadge,
+  PriorityBadge,
+  ApprovalBadge,
+  Avatar,
+} from "@/components/servicehub/JobBadges";
+import { ContractStatusBadge, type ContractStatus } from "@/components/servicehub/ContractStatusBadge";
+import {
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  MessageSquare,
+  Paperclip,
+  Activity as ActivityIcon,
+  Truck,
+  PauseCircle,
+  ShieldAlert,
+  Copy,
+  Check,
+  Upload,
+  FileText,
+  Download,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 
 const searchSchema = z.object({ tenant: z.string().uuid() });
 
@@ -70,6 +96,8 @@ function JobDetailPage() {
   const qc = useQueryClient();
   const getJob = useServerFn(getJobFull);
   const engineersFn = useServerFn(listEngineerOptions);
+  const commentsListFn = useServerFn(listJobComments);
+  const attachmentsListFn = useServerFn(listJobAttachments);
 
   const job = useQuery({
     queryKey: ["job", tenant, jobId],
@@ -79,110 +107,187 @@ function JobDetailPage() {
     queryKey: ["engineers", tenant],
     queryFn: () => engineersFn({ data: { tenantId: tenant } }),
   });
+  const commentsCount = useQuery({
+    queryKey: ["job-comments", tenant, jobId],
+    queryFn: () => commentsListFn({ data: { tenantId: tenant, jobId } }),
+  });
+  const attachmentsCount = useQuery({
+    queryKey: ["job-attachments", tenant, jobId],
+    queryFn: () => attachmentsListFn({ data: { tenantId: tenant, jobId } }),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["job", tenant, jobId] });
     qc.invalidateQueries({ queryKey: ["job-activity", tenant, jobId] });
   };
 
-  if (job.isLoading) return <div className="p-6 text-sm">Loading…</div>;
+  if (job.isLoading)
+    return (
+      <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading job…
+      </div>
+    );
   if (job.error)
     return (
-      <div className="p-6 text-sm text-destructive">
-        {(job.error as Error).message}{" "}
-        <Link to="/jobs" search={{ tenant }} className="underline">
-          Back
-        </Link>
+      <div className="mx-auto max-w-md p-6 text-center">
+        <div className="mb-3 flex items-center justify-center gap-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          {(job.error as Error).message}
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/jobs" search={{ tenant }}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to Jobs
+          </Link>
+        </Button>
       </div>
     );
   const j = job.data!;
+  const contractCurrent = (j.contractStatusCurrent ?? null) as ContractStatus | null;
+  const contractAtCreation = (j.contract_status_at_creation ?? null) as
+    | ContractStatus
+    | null;
 
   return (
-    <main className="mx-auto max-w-6xl p-4 md:p-6 space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-xs text-muted-foreground">
-            <Link to="/jobs" search={{ tenant }} className="underline">
-              Jobs
-            </Link>{" "}
-            /
-          </div>
-          <h1 className="text-2xl font-semibold font-mono">{j.job_no}</h1>
-          <p className="text-sm text-muted-foreground">{j.title}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">Status: {j.status.replace(/_/g, " ")}</Badge>
-          <Badge variant="outline">Priority: {j.priority}</Badge>
-          {j.approval_required && (
-            <Badge variant="outline">
-              Approval: {j.approval_status.replace(/_/g, " ")}
-            </Badge>
-          )}
-        </div>
-      </header>
+    <main className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
+      {/* Breadcrumb */}
+      <Link
+        to="/jobs"
+        search={{ tenant }}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3 w-3" /> Back to Jobs
+      </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm grid grid-cols-2 gap-3">
-              <Field label="Customer" value={j.n3_customer_name ?? j.n3_customer_code ?? "—"} />
-              <Field label={j.assignedUserLabel} value={j.assigned_engineer_display_name ?? "Unassigned"} />
-              <Field label="Created By" value={j.created_by_display_name ?? "—"} />
-              <Field label="Due Date" value={j.due_date ?? "—"} />
-              <Field label="Contract at Creation" value={j.contract_status_at_creation ?? "—"} />
-              <Field
-                label="Contract Now"
-                value={
-                  j.contractStatusCurrent
-                    ? `${j.contractStatusCurrent}${j.contractExpiryCurrent ? ` (expires ${j.contractExpiryCurrent})` : ""}`
-                    : "—"
+      {/* Header card */}
+      <Card className="overflow-hidden">
+        <div className="border-b bg-muted/30 p-4 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-lg font-semibold text-primary md:text-xl">
+                  {j.job_no}
+                </span>
+                <StatusBadge status={j.status} />
+                <PriorityBadge priority={j.priority} />
+                {j.approval_required && (
+                  <ApprovalBadge required status={j.approval_status} />
+                )}
+              </div>
+              <h1 className="text-lg font-semibold leading-snug md:text-xl">
+                {j.title}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {j.n3_customer_name ?? j.n3_customer_code ?? "—"}
+              </p>
+            </div>
+            <div className="grid shrink-0 grid-cols-2 gap-3 text-xs sm:grid-cols-4 md:flex md:flex-col md:items-end md:gap-1.5 md:text-right">
+              <MetaItem label={j.assignedUserLabel}
+                value={j.assigned_engineer_display_name ?? "Unassigned"} />
+              <MetaItem label="Created By" value={j.created_by_display_name ?? "—"} />
+              <MetaItem label="Due Date" value={j.due_date ?? "—"} />
+              <MetaItem
+                label="Contract"
+                node={
+                  contractCurrent ? (
+                    <ContractStatusBadge status={contractCurrent} />
+                  ) : (
+                    <span>—</span>
+                  )
                 }
               />
-              <div className="col-span-2">
-                <div className="text-xs text-muted-foreground">Description</div>
-                <div className="whitespace-pre-wrap">{j.description ?? "—"}</div>
-              </div>
-              {j.internal_remark && (
-                <div className="col-span-2">
-                  <div className="text-xs text-muted-foreground">Internal Remark</div>
-                  <div className="whitespace-pre-wrap">{j.internal_remark}</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
+      </Card>
 
-          <Tabs defaultValue="comments">
-            <TabsList>
-              <TabsTrigger value="comments">Comments</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
-              {j.viewerCanViewActivity && <TabsTrigger value="activity">Activity</TabsTrigger>}
-              {j.vendor_referral_required && <TabsTrigger value="vendor">Vendor</TabsTrigger>}
-              {j.status === "waiting_customer" && (
-                <TabsTrigger value="waiting_customer">Waiting Customer</TabsTrigger>
+      {/* Approval banner */}
+      {j.approval_required && j.approval_status === "waiting_approval" && (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="flex items-start gap-3 p-4">
+            <ShieldAlert
+              className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="font-medium text-amber-900">Approval required</p>
+              <p className="mt-1 text-amber-800">
+                This job was created against a{" "}
+                <span className="font-medium">
+                  {(contractAtCreation ?? "unknown").replace(/_/g, " ")}
+                </span>{" "}
+                contract. An Administrator must approve it before work can start.
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                Created by {j.created_by_display_name ?? "—"}.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <Tabs defaultValue="info">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="info">Information</TabsTrigger>
+              <TabsTrigger value="comments" className="gap-1.5">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Comments
+                {commentsCount.data && commentsCount.data.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 min-w-4 px-1 text-[10px]"
+                  >
+                    {commentsCount.data.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                {attachmentsCount.data && attachmentsCount.data.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 min-w-4 px-1 text-[10px]"
+                  >
+                    {attachmentsCount.data.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="vendor" className="gap-1.5">
+                <Truck className="h-3.5 w-3.5" />
+                Vendor
+              </TabsTrigger>
+              <TabsTrigger value="waiting_customer" className="gap-1.5">
+                <PauseCircle className="h-3.5 w-3.5" />
+                Waiting Customer
+              </TabsTrigger>
+              {j.viewerCanViewActivity && (
+                <TabsTrigger value="activity" className="gap-1.5">
+                  <ActivityIcon className="h-3.5 w-3.5" />
+                  Activity
+                </TabsTrigger>
               )}
             </TabsList>
-            <TabsContent value="comments">
+
+            <TabsContent value="info" className="mt-4">
+              <InfoPanel job={j} />
+            </TabsContent>
+            <TabsContent value="comments" className="mt-4">
               <CommentsPanel tenantId={tenant} jobId={jobId} onChanged={invalidate} />
             </TabsContent>
-            <TabsContent value="attachments">
+            <TabsContent value="attachments" className="mt-4">
               <AttachmentsPanel tenantId={tenant} jobId={jobId} onChanged={invalidate} />
             </TabsContent>
+            <TabsContent value="vendor" className="mt-4">
+              <VendorPanel job={j} onChanged={invalidate} />
+            </TabsContent>
+            <TabsContent value="waiting_customer" className="mt-4">
+              <WaitingCustomerPanel job={j} />
+            </TabsContent>
             {j.viewerCanViewActivity && (
-              <TabsContent value="activity">
+              <TabsContent value="activity" className="mt-4">
                 <ActivityPanel tenantId={tenant} jobId={jobId} />
-              </TabsContent>
-            )}
-            {j.vendor_referral_required && (
-              <TabsContent value="vendor">
-                <VendorPanel job={j} onChanged={invalidate} />
-              </TabsContent>
-            )}
-            {j.status === "waiting_customer" && (
-              <TabsContent value="waiting_customer">
-                <WaitingCustomerPanel job={j} />
               </TabsContent>
             )}
           </Tabs>
@@ -190,8 +295,10 @@ function JobDetailPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Actions</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <ActionsPanel
@@ -203,8 +310,10 @@ function JobDetailPage() {
           </Card>
           {j.viewerCanAct && (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Edit Info</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Edit Info
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <EditInfoPanel job={j} onChanged={invalidate} />
@@ -217,11 +326,115 @@ function JobDetailPage() {
   );
 }
 
+function MetaItem({
+  label,
+  value,
+  node,
+}: {
+  label: string;
+  value?: string;
+  node?: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 truncate text-sm font-medium">
+        {node ?? value ?? "—"}
+      </div>
+    </div>
+  );
+}
+
+function InfoPanel({ job: j }: { job: any }) {
+  const contractCurrent = (j.contractStatusCurrent ?? null) as ContractStatus | null;
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Customer & Contract</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <Field label="Customer" value={j.n3_customer_name ?? j.n3_customer_code ?? "—"} />
+          <div>
+            <div className="text-xs text-muted-foreground">Contract Status</div>
+            <div className="mt-1">
+              {contractCurrent ? (
+                <ContractStatusBadge status={contractCurrent} />
+              ) : (
+                <span className="text-sm">—</span>
+              )}
+            </div>
+          </div>
+          <Field
+            label="Expiry Date"
+            value={j.contractExpiryCurrent ?? "—"}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Job Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <Field label="Subject" value={j.title} />
+          <div>
+            <div className="text-xs text-muted-foreground">Description</div>
+            <div className="mt-0.5 whitespace-pre-wrap text-sm">
+              {j.description ?? "—"}
+            </div>
+          </div>
+          {j.internal_remark && (
+            <div>
+              <div className="text-xs text-muted-foreground">Internal Remark</div>
+              <div className="mt-0.5 whitespace-pre-wrap text-sm">
+                {j.internal_remark}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-xs text-muted-foreground">Priority</div>
+              <div className="mt-1">
+                <PriorityBadge priority={j.priority} />
+              </div>
+            </div>
+            <Field label="Due Date" value={j.due_date ?? "—"} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Assignment</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+          <Field
+            label={j.assignedUserLabel}
+            value={j.assigned_engineer_display_name ?? "Unassigned"}
+          />
+          <Field label="Created By / PIC" value={j.created_by_display_name ?? "—"} />
+          <Field
+            label="Contract at Creation"
+            value={
+              j.contract_status_at_creation
+                ? String(j.contract_status_at_creation).replace(/_/g, " ")
+                : "—"
+            }
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div>{value}</div>
+      <div className="mt-0.5 text-sm">{value}</div>
     </div>
   );
 }
