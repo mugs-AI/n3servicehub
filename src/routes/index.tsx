@@ -82,7 +82,13 @@ function LandingPage() {
             These pages are for Milestone 1.x verification and will be removed
             in Milestone 2.
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              to="/support"
+              className="rounded-md border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+            >
+              Support Dashboard
+            </Link>
             <Link
               to="/admin/sync"
               className="rounded-md border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
