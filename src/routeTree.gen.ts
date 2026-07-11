@@ -21,6 +21,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
 import { Route as AuthenticatedJobsQuickRouteImport } from './routes/_authenticated/jobs.quick'
 import { Route as AuthenticatedJobsNewRouteImport } from './routes/_authenticated/jobs.new'
+import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
 import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 import { Route as AuthenticatedJobsCreatedIdRouteImport } from './routes/_authenticated/jobs.created.$id'
@@ -84,6 +85,11 @@ const AuthenticatedJobsNewRoute = AuthenticatedJobsNewRouteImport.update({
   path: '/jobs/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedJobsJobIdRoute = AuthenticatedJobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminSyncRoute = AuthenticatedAdminSyncRouteImport.update({
   id: '/admin/sync',
   path: '/admin/sync',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
+  '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/new': typeof AuthenticatedJobsNewRoute
   '/_authenticated/jobs/quick': typeof AuthenticatedJobsQuickRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/admin/bootstrap'
     | '/status/api'
     | '/admin/sync'
+    | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
     | '/jobs/'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/admin/bootstrap'
     | '/status/api'
     | '/admin/sync'
+    | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
     | '/jobs'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin/bootstrap'
     | '/status/api'
     | '/_authenticated/admin/sync'
+    | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/new'
     | '/_authenticated/jobs/quick'
     | '/_authenticated/jobs/'
@@ -299,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/jobs/$jobId': {
+      id: '/_authenticated/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedJobsJobIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/sync': {
       id: '/_authenticated/admin/sync'
       path: '/admin/sync'
@@ -327,6 +346,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedAdminSyncRoute: typeof AuthenticatedAdminSyncRoute
+  AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsNewRoute: typeof AuthenticatedJobsNewRoute
   AuthenticatedJobsQuickRoute: typeof AuthenticatedJobsQuickRoute
   AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
@@ -337,6 +357,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedAdminSyncRoute: AuthenticatedAdminSyncRoute,
+  AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
   AuthenticatedJobsNewRoute: AuthenticatedJobsNewRoute,
   AuthenticatedJobsQuickRoute: AuthenticatedJobsQuickRoute,
   AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
