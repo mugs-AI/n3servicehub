@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/status/api")({
+export const Route = createFileRoute("/_authenticated/admin/dev/status/api")({
   head: () => ({
     meta: [
       { title: "API Connection Status — ServiceHub" },
@@ -21,7 +21,7 @@ function ApiStatusPage() {
         Temporary developer view of upstream N3.QNE.Cloud API reachability.
         Live per-tenant probes arrive in Milestone 2. For live sync run
         results, use the{" "}
-        <Link to="/admin/sync" className="underline">
+        <Link to="/admin/dev/sync" className="underline">
           Administrator Verification Console
         </Link>
         .

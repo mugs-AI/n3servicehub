@@ -23,7 +23,7 @@ import {
   type ParsingDiagnosticRow,
 } from "@/lib/contract-status.functions";
 
-export const Route = createFileRoute("/_authenticated/admin/sync")({
+export const Route = createFileRoute("/_authenticated/admin/dev/sync")({
   component: SyncConsole,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();

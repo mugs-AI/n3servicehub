@@ -289,7 +289,7 @@ function N3Tab({ tenantId }: { tenantId: string }) {
               {syncing ? "Syncing…" : "Sync All Now"}
             </Button>
             <Button size="sm" variant="ghost" asChild>
-              <Link to="/admin/sync">View Sync History</Link>
+              <Link to="/admin/dev/sync">View Sync History</Link>
             </Button>
           </div>
           {testResult && (
@@ -362,7 +362,7 @@ function StockPicker({
   if (options.length === 0)
     return (
       <p className="text-xs text-muted-foreground">
-        No synced N3 stock. Run <Link to="/admin/sync" className="underline">Sync</Link> first.
+        No synced N3 stock. Run <Link to="/admin/dev/sync" className="underline">Sync</Link> first.
       </p>
     );
   return (
