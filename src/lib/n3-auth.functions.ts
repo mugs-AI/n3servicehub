@@ -25,12 +25,12 @@ export const n3DevConnect = createServerFn({ method: "POST" })
     const url = `${base}/api/auth/connect?api-key=${encodeURIComponent(data.apiKey)}`;
 
     const res = await fetch(url, { method: "GET" });
-    const text = await res.text();
-    let body: unknown = null;
+    const rawBody = await res.text();
+    let parsed: { code?: string | number; data?: { token?: string; expiresAt?: string } } | null = null;
     try {
-      body = JSON.parse(text);
+      parsed = JSON.parse(rawBody);
     } catch {
-      body = text;
+      parsed = null;
     }
 
     if (!res.ok) {
@@ -38,18 +38,21 @@ export const n3DevConnect = createServerFn({ method: "POST" })
         ok: false as const,
         status: res.status,
         error: `N3 connect failed (${res.status})`,
-        body,
+        rawBody: rawBody.slice(0, 2000),
+        token: null,
+        expiresAt: null,
       };
     }
 
-    const envelope = body as { code?: string | number; data?: { token?: string; expiresAt?: string } };
-    const token = envelope?.data?.token;
+    const token = parsed?.data?.token ?? null;
     if (!token) {
       return {
         ok: false as const,
         status: res.status,
         error: "N3 connect response did not include data.token",
-        body,
+        rawBody: rawBody.slice(0, 2000),
+        token: null,
+        expiresAt: null,
       };
     }
 
@@ -57,6 +60,8 @@ export const n3DevConnect = createServerFn({ method: "POST" })
       ok: true as const,
       status: res.status,
       token,
-      expiresAt: envelope?.data?.expiresAt ?? null,
+      expiresAt: parsed?.data?.expiresAt ?? null,
+      rawBody: "",
+      error: "",
     };
   });
