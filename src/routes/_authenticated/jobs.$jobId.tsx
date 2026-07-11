@@ -1180,21 +1180,49 @@ function RejectDialog({
 
 // ---------- Waiting Customer info ----------
 function WaitingCustomerPanel({ job }: { job: any }) {
+  if (job.status !== "waiting_customer") {
+    return (
+      <EmptyState
+        icon={<PauseCircle className="h-5 w-5" />}
+        title="Not waiting for Customer"
+        hint="This job is not currently waiting for Customer response."
+      />
+    );
+  }
   return (
-    <div className="text-sm space-y-1">
-      <div>
-        <span className="text-muted-foreground">Reason: </span>
-        {job.waiting_customer_reason ?? "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">Since: </span>
-        {job.waiting_customer_since ? new Date(job.waiting_customer_since).toLocaleString() : "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">Follow-up: </span>
-        {job.waiting_customer_follow_up_date ?? "—"}
-      </div>
-    </div>
+    <Card className="border-amber-200 bg-amber-50/60">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+          <PauseCircle className="h-4 w-4" /> Waiting for Customer
+        </div>
+        <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+          <div>
+            <div className="text-xs text-amber-800/80">Waiting Since</div>
+            <div className="mt-0.5 font-medium">
+              {job.waiting_customer_since
+                ? new Date(job.waiting_customer_since).toLocaleString()
+                : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-amber-800/80">Follow-up Date</div>
+            <div className="mt-0.5 font-medium">
+              {job.waiting_customer_follow_up_date ?? "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-amber-800/80">Marked By</div>
+            <div className="mt-0.5 font-medium">{job.waiting_customer_by ?? "—"}</div>
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-amber-800/80">Reason</div>
+          <div className="mt-0.5 whitespace-pre-wrap text-sm">
+            {job.waiting_customer_reason ?? "—"}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1208,60 +1236,165 @@ function VendorPanel({ job, onChanged }: { job: any; onChanged: () => void }) {
   const [status, setStatus] = useState(job.vendor_status ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(
+    !!(job.vendor_name || job.vendor_ticket_number || job.vendor_referral_required),
+  );
+  const [copied, setCopied] = useState(false);
+
+  const hasReferral = !!(job.vendor_name || job.vendor_ticket_number);
+
   return (
-    <div className="space-y-2 text-sm">
-      {err && <p className="text-destructive">{err}</p>}
-      <div>
-        <Label>Vendor Name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div>
-        <Label>Vendor Ticket Number</Label>
-        <Input value={ticket} onChange={(e) => setTicket(e.target.value)} />
-      </div>
-      <div>
-        <Label>Follow-up Date</Label>
-        <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
-      </div>
-      <div>
-        <Label>Vendor Status</Label>
-        <Input value={status} onChange={(e) => setStatus(e.target.value)} />
-      </div>
-      <div>
-        <Label>Remark</Label>
-        <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={3} />
-      </div>
-      <Button
-        size="sm"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setErr(null);
-          try {
-            await updFn({
-              data: {
-                tenantId: job.tenant_id,
-                jobId: job.id,
-                vendorName: name || null,
-                vendorTicketNumber: ticket || null,
-                vendorFollowUpDate: followUp || null,
-                vendorStatus: status || null,
-                vendorRemark: remark || null,
-              },
-            });
-            onChanged();
-          } catch (e) {
-            setErr(e instanceof Error ? e.message : String(e));
-          } finally {
-            setBusy(false);
+    <div className="space-y-4">
+      {!hasReferral && !showForm && (
+        <EmptyState
+          icon={<Truck className="h-5 w-5" />}
+          title="No vendor referral recorded"
+          hint="Refer this job to an external vendor and track their ticket."
+          action={
+            <Button size="sm" className="mt-2" onClick={() => setShowForm(true)}>
+              Add Vendor Referral
+            </Button>
           }
-        }}
-      >
-        Save Vendor Info
-      </Button>
+        />
+      )}
+
+      {hasReferral && (
+        <Card className="border-l-4 border-l-orange-400 bg-orange-50/40">
+          <CardContent className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Name</div>
+              <div className="mt-0.5 font-medium">{job.vendor_name ?? "—"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Ticket</div>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <span className="font-mono font-semibold">
+                  {job.vendor_ticket_number ?? "—"}
+                </span>
+                {job.vendor_ticket_number && (
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground hover:bg-orange-100 hover:text-foreground"
+                    aria-label="Copy ticket number"
+                    onClick={() => {
+                      navigator.clipboard.writeText(job.vendor_ticket_number);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }}
+                  >
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Status</div>
+              <div className="mt-0.5">{job.vendor_status ?? "—"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Follow-up Date</div>
+              <div className="mt-0.5">{job.vendor_follow_up_date ?? "—"}</div>
+            </div>
+            {job.vendor_remark && (
+              <div className="sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Vendor Remark</div>
+                <div className="mt-0.5 whitespace-pre-wrap">{job.vendor_remark}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {(showForm || hasReferral) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {hasReferral ? "Update Vendor Referral" : "Add Vendor Referral"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {err && (
+              <p className="flex items-center gap-1 text-destructive">
+                <AlertCircle className="h-4 w-4" /> {err}
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label>Vendor Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div>
+                <Label>Vendor Ticket Number</Label>
+                <Input value={ticket} onChange={(e) => setTicket(e.target.value)} />
+              </div>
+              <div>
+                <Label>Follow-up Date</Label>
+                <Input
+                  type="date"
+                  value={followUp}
+                  onChange={(e) => setFollowUp(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Vendor Status</Label>
+                <Input value={status} onChange={(e) => setStatus(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Remark</Label>
+              <Textarea
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setErr(null);
+                  try {
+                    await updFn({
+                      data: {
+                        tenantId: job.tenant_id,
+                        jobId: job.id,
+                        vendorName: name || null,
+                        vendorTicketNumber: ticket || null,
+                        vendorFollowUpDate: followUp || null,
+                        vendorStatus: status || null,
+                        vendorRemark: remark || null,
+                      },
+                    });
+                    onChanged();
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving…
+                  </>
+                ) : (
+                  "Save Vendor Info"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
 
 // ---------- Edit info ----------
 function EditInfoPanel({ job, onChanged }: { job: any; onChanged: () => void }) {
