@@ -7,6 +7,13 @@
  *
  * Never called from the browser. Uses the admin (service-role) client
  * because it runs after sync completion and from admin server functions.
+ *
+ * Milestone 1.3.1 changes:
+ *  - Inclusive expiry: expiry = doc_date + contract_days - 1 day (UTC).
+ *  - No hardcoded `due_soon_days` fallback. Missing General Settings surfaces
+ *    a calculation error and keeps snapshots stale.
+ *  - Pure line-parse helper exports diagnostics for the Verification Console
+ *    without leaking full payloads.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -30,24 +37,51 @@ type QualifyingDoc = {
   contractDays: number;
 };
 
-function extractLineStockCodes(payload: unknown): string[] {
-  if (!payload || typeof payload !== "object") return [];
+export type LineParseResult = {
+  codes: string[];
+  hadLinesArray: boolean;
+  lineCount: number;
+  missingStockCount: number;
+};
+
+/**
+ * Extract stock codes from an N3 document payload. Also returns diagnostics
+ * so admins can identify payloads with no recognizable line collection or
+ * lines that lack a Stock Code field.
+ */
+export function parseDocumentLines(payload: unknown): LineParseResult {
+  if (!payload || typeof payload !== "object") {
+    return { codes: [], hadLinesArray: false, lineCount: 0, missingStockCount: 0 };
+  }
   const p = payload as Record<string, unknown>;
-  const candidates = [
-    p.details,
-    p.Details,
-    p.lines,
-    p.Lines,
-    p.documentLines,
-    p.DocumentLines,
-    p.items,
-    p.Items,
+  const candidateKeys = [
+    "details",
+    "Details",
+    "lines",
+    "Lines",
+    "documentLines",
+    "DocumentLines",
+    "items",
+    "Items",
   ];
-  const lines = candidates.find((c) => Array.isArray(c)) as unknown[] | undefined;
-  if (!lines) return [];
-  const out: string[] = [];
+  let lines: unknown[] | null = null;
+  for (const k of candidateKeys) {
+    const v = p[k];
+    if (Array.isArray(v)) {
+      lines = v;
+      break;
+    }
+  }
+  if (!lines) {
+    return { codes: [], hadLinesArray: false, lineCount: 0, missingStockCount: 0 };
+  }
+  const codes: string[] = [];
+  let missing = 0;
   for (const l of lines) {
-    if (!l || typeof l !== "object") continue;
+    if (!l || typeof l !== "object") {
+      missing += 1;
+      continue;
+    }
     const li = l as Record<string, unknown>;
     const code =
       (li.stockCode as string) ??
@@ -58,18 +92,39 @@ function extractLineStockCodes(payload: unknown): string[] {
       (li.ItemCode as string) ??
       (li.code as string) ??
       null;
-    if (typeof code === "string" && code.trim().length > 0) out.push(code.trim());
+    if (typeof code === "string" && code.trim().length > 0) {
+      codes.push(code.trim());
+    } else {
+      missing += 1;
+    }
   }
-  return out;
+  return {
+    codes,
+    hadLinesArray: true,
+    lineCount: lines.length,
+    missingStockCount: missing,
+  };
 }
 
-function addDays(iso: string, days: number): string {
-  const d = new Date(iso + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
+/**
+ * Inclusive expiry — the document date is Day 1 of the contract.
+ *   docDate 2025-09-01 + 365 days -> 2026-08-31
+ *   docDate 2025-09-01 + 183 days -> 2026-03-02
+ * Pure, UTC-safe, date-only.
+ */
+export function computeExpiryDate(docDateIso: string, contractDays: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(docDateIso)) {
+    throw new Error(`Invalid docDate '${docDateIso}', expected yyyy-mm-dd`);
+  }
+  if (!Number.isInteger(contractDays) || contractDays <= 0) {
+    throw new Error(`Invalid contractDays '${contractDays}', must be positive integer`);
+  }
+  const d = new Date(docDateIso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + (contractDays - 1));
   return d.toISOString().slice(0, 10);
 }
 
-function daysBetween(fromIso: string, toIso: string): number {
+export function daysBetween(fromIso: string, toIso: string): number {
   const a = new Date(fromIso + "T00:00:00Z").getTime();
   const b = new Date(toIso + "T00:00:00Z").getTime();
   return Math.floor((b - a) / 86_400_000);
@@ -84,6 +139,7 @@ export type RecalcResult = {
   written: number;
   failed: number;
   counts: Record<ContractStatus, number>;
+  configError: string | null;
 };
 
 export class ContractStatusEngine {
@@ -116,7 +172,13 @@ export class ContractStatusEngine {
       unknown: 0,
       suspended: 0,
     };
-    const result: RecalcResult = { processed: 0, written: 0, failed: 0, counts };
+    const result: RecalcResult = {
+      processed: 0,
+      written: 0,
+      failed: 0,
+      counts,
+      configError: null,
+    };
     if (uniqueCodes.length === 0) return result;
 
     // Load reference data once.
@@ -138,7 +200,21 @@ export class ContractStatusEngine {
         contractDaysByCode.set(m.stock_code, m.contract_days);
       }
     }
-    const dueSoonDays = gs?.due_soon_days ?? 30;
+
+    // No hardcoded fallback. If General Settings / due_soon_days is missing,
+    // record the failure per-snapshot and keep them stale.
+    let dueSoonDays: number | null = null;
+    let configError: string | null = null;
+    if (!gs) {
+      configError =
+        "General Settings row missing for this tenant. Open Settings → General to set 'Due Soon' days.";
+    } else if (typeof gs.due_soon_days !== "number" || gs.due_soon_days <= 0) {
+      configError =
+        "General Settings 'due_soon_days' is not configured. Open Settings → General to set it.";
+    } else {
+      dueSoonDays = gs.due_soon_days;
+    }
+    result.configError = configError;
 
     // Load customer directory for name lookup if not provided.
     let directory = knownCustomers;
@@ -180,8 +256,8 @@ export class ContractStatusEngine {
     ) => {
       if (row.is_cancelled) return;
       if (!row.doc_date || !row.n3_customer_code) return;
-      const codes = extractLineStockCodes(row.payload);
-      for (const stockCode of codes) {
+      const parsed = parseDocumentLines(row.payload);
+      for (const stockCode of parsed.codes) {
         const days = contractDaysByCode.get(stockCode);
         if (!days) continue;
         const arr = byCustomer.get(row.n3_customer_code) ?? [];
@@ -211,15 +287,24 @@ export class ContractStatusEngine {
       let latest: QualifyingDoc | null = null;
       let expiry: string | null = null;
       let remaining: number | null = null;
+      let rowError: string | null = configError;
+      let stale = configError !== null;
 
       if (qualifying.length > 0) {
         qualifying.sort((a, b) => (a.docDate < b.docDate ? 1 : a.docDate > b.docDate ? -1 : 0));
         latest = qualifying[0];
-        expiry = addDays(latest.docDate, latest.contractDays);
+        expiry = computeExpiryDate(latest.docDate, latest.contractDays);
         remaining = daysBetween(today, expiry);
-        if (remaining < 0) status = "overdue";
-        else if (remaining <= dueSoonDays) status = "due_soon";
-        else status = "active";
+        if (dueSoonDays === null) {
+          // Cannot classify without configured Due Soon days.
+          status = "unknown";
+        } else if (remaining < 0) {
+          status = "overdue";
+        } else if (remaining <= dueSoonDays) {
+          status = "due_soon";
+        } else {
+          status = "active";
+        }
       }
 
       counts[status] += 1;
@@ -237,9 +322,9 @@ export class ContractStatusEngine {
         expiry_date: expiry,
         remaining_days: remaining,
         contract_status: status,
-        last_calculated_at: nowIso,
-        calculation_error: null,
-        is_stale: false,
+        last_calculated_at: rowError ? null : nowIso,
+        calculation_error: rowError,
+        is_stale: stale,
       });
     }
 
@@ -252,10 +337,9 @@ export class ContractStatusEngine {
         .upsert(chunk, { onConflict: "tenant_id,n3_customer_code" });
       if (upErr) {
         result.failed += chunk.length;
-        // Record error against rows so admin can inspect.
         await this.admin
           .from("customer_contract_snapshots")
-          .update({ calculation_error: upErr.message })
+          .update({ calculation_error: upErr.message, is_stale: true })
           .eq("tenant_id", tenantId)
           .in(
             "n3_customer_code",
