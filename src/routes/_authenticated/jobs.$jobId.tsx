@@ -1,5 +1,6 @@
 /**
  * Milestone 1.5 — Job Detail & workflow.
+ * Milestone 1.5.1 — UI polish only. Business logic unchanged.
  */
 
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -56,6 +57,31 @@ import {
   listJobActivity,
 } from "@/lib/jobs-workspace.functions";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  StatusBadge,
+  PriorityBadge,
+  ApprovalBadge,
+  Avatar,
+} from "@/components/servicehub/JobBadges";
+import { ContractStatusBadge, type ContractStatus } from "@/components/servicehub/ContractStatusBadge";
+import {
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  MessageSquare,
+  Paperclip,
+  Activity as ActivityIcon,
+  Truck,
+  PauseCircle,
+  ShieldAlert,
+  Copy,
+  Check,
+  Upload,
+  FileText,
+  Download,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 
 const searchSchema = z.object({ tenant: z.string().uuid() });
 
@@ -70,6 +96,8 @@ function JobDetailPage() {
   const qc = useQueryClient();
   const getJob = useServerFn(getJobFull);
   const engineersFn = useServerFn(listEngineerOptions);
+  const commentsListFn = useServerFn(listJobComments);
+  const attachmentsListFn = useServerFn(listJobAttachments);
 
   const job = useQuery({
     queryKey: ["job", tenant, jobId],
@@ -79,110 +107,187 @@ function JobDetailPage() {
     queryKey: ["engineers", tenant],
     queryFn: () => engineersFn({ data: { tenantId: tenant } }),
   });
+  const commentsCount = useQuery({
+    queryKey: ["job-comments", tenant, jobId],
+    queryFn: () => commentsListFn({ data: { tenantId: tenant, jobId } }),
+  });
+  const attachmentsCount = useQuery({
+    queryKey: ["job-attachments", tenant, jobId],
+    queryFn: () => attachmentsListFn({ data: { tenantId: tenant, jobId } }),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["job", tenant, jobId] });
     qc.invalidateQueries({ queryKey: ["job-activity", tenant, jobId] });
   };
 
-  if (job.isLoading) return <div className="p-6 text-sm">Loading…</div>;
+  if (job.isLoading)
+    return (
+      <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading job…
+      </div>
+    );
   if (job.error)
     return (
-      <div className="p-6 text-sm text-destructive">
-        {(job.error as Error).message}{" "}
-        <Link to="/jobs" search={{ tenant }} className="underline">
-          Back
-        </Link>
+      <div className="mx-auto max-w-md p-6 text-center">
+        <div className="mb-3 flex items-center justify-center gap-2 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          {(job.error as Error).message}
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/jobs" search={{ tenant }}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to Jobs
+          </Link>
+        </Button>
       </div>
     );
   const j = job.data!;
+  const contractCurrent = (j.contractStatusCurrent ?? null) as ContractStatus | null;
+  const contractAtCreation = (j.contract_status_at_creation ?? null) as
+    | ContractStatus
+    | null;
 
   return (
-    <main className="mx-auto max-w-6xl p-4 md:p-6 space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="text-xs text-muted-foreground">
-            <Link to="/jobs" search={{ tenant }} className="underline">
-              Jobs
-            </Link>{" "}
-            /
-          </div>
-          <h1 className="text-2xl font-semibold font-mono">{j.job_no}</h1>
-          <p className="text-sm text-muted-foreground">{j.title}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">Status: {j.status.replace(/_/g, " ")}</Badge>
-          <Badge variant="outline">Priority: {j.priority}</Badge>
-          {j.approval_required && (
-            <Badge variant="outline">
-              Approval: {j.approval_status.replace(/_/g, " ")}
-            </Badge>
-          )}
-        </div>
-      </header>
+    <main className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
+      {/* Breadcrumb */}
+      <Link
+        to="/jobs"
+        search={{ tenant }}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3 w-3" /> Back to Jobs
+      </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm grid grid-cols-2 gap-3">
-              <Field label="Customer" value={j.n3_customer_name ?? j.n3_customer_code ?? "—"} />
-              <Field label={j.assignedUserLabel} value={j.assigned_engineer_display_name ?? "Unassigned"} />
-              <Field label="Created By" value={j.created_by_display_name ?? "—"} />
-              <Field label="Due Date" value={j.due_date ?? "—"} />
-              <Field label="Contract at Creation" value={j.contract_status_at_creation ?? "—"} />
-              <Field
-                label="Contract Now"
-                value={
-                  j.contractStatusCurrent
-                    ? `${j.contractStatusCurrent}${j.contractExpiryCurrent ? ` (expires ${j.contractExpiryCurrent})` : ""}`
-                    : "—"
+      {/* Header card */}
+      <Card className="overflow-hidden">
+        <div className="border-b bg-muted/30 p-4 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-lg font-semibold text-primary md:text-xl">
+                  {j.job_no}
+                </span>
+                <StatusBadge status={j.status} />
+                <PriorityBadge priority={j.priority} />
+                {j.approval_required && (
+                  <ApprovalBadge required status={j.approval_status} />
+                )}
+              </div>
+              <h1 className="text-lg font-semibold leading-snug md:text-xl">
+                {j.title}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {j.n3_customer_name ?? j.n3_customer_code ?? "—"}
+              </p>
+            </div>
+            <div className="grid shrink-0 grid-cols-2 gap-3 text-xs sm:grid-cols-4 md:flex md:flex-col md:items-end md:gap-1.5 md:text-right">
+              <MetaItem label={j.assignedUserLabel}
+                value={j.assigned_engineer_display_name ?? "Unassigned"} />
+              <MetaItem label="Created By" value={j.created_by_display_name ?? "—"} />
+              <MetaItem label="Due Date" value={j.due_date ?? "—"} />
+              <MetaItem
+                label="Contract"
+                node={
+                  contractCurrent ? (
+                    <ContractStatusBadge status={contractCurrent} />
+                  ) : (
+                    <span>—</span>
+                  )
                 }
               />
-              <div className="col-span-2">
-                <div className="text-xs text-muted-foreground">Description</div>
-                <div className="whitespace-pre-wrap">{j.description ?? "—"}</div>
-              </div>
-              {j.internal_remark && (
-                <div className="col-span-2">
-                  <div className="text-xs text-muted-foreground">Internal Remark</div>
-                  <div className="whitespace-pre-wrap">{j.internal_remark}</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
+      </Card>
 
-          <Tabs defaultValue="comments">
-            <TabsList>
-              <TabsTrigger value="comments">Comments</TabsTrigger>
-              <TabsTrigger value="attachments">Attachments</TabsTrigger>
-              {j.viewerCanViewActivity && <TabsTrigger value="activity">Activity</TabsTrigger>}
-              {j.vendor_referral_required && <TabsTrigger value="vendor">Vendor</TabsTrigger>}
-              {j.status === "waiting_customer" && (
-                <TabsTrigger value="waiting_customer">Waiting Customer</TabsTrigger>
+      {/* Approval banner */}
+      {j.approval_required && j.approval_status === "waiting_approval" && (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="flex items-start gap-3 p-4">
+            <ShieldAlert
+              className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="font-medium text-amber-900">Approval required</p>
+              <p className="mt-1 text-amber-800">
+                This job was created against a{" "}
+                <span className="font-medium">
+                  {(contractAtCreation ?? "unknown").replace(/_/g, " ")}
+                </span>{" "}
+                contract. An Administrator must approve it before work can start.
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                Created by {j.created_by_display_name ?? "—"}.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <Tabs defaultValue="info">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              <TabsTrigger value="info">Information</TabsTrigger>
+              <TabsTrigger value="comments" className="gap-1.5">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Comments
+                {commentsCount.data && commentsCount.data.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 min-w-4 px-1 text-[10px]"
+                  >
+                    {commentsCount.data.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="gap-1.5">
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments
+                {attachmentsCount.data && attachmentsCount.data.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 min-w-4 px-1 text-[10px]"
+                  >
+                    {attachmentsCount.data.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="vendor" className="gap-1.5">
+                <Truck className="h-3.5 w-3.5" />
+                Vendor
+              </TabsTrigger>
+              <TabsTrigger value="waiting_customer" className="gap-1.5">
+                <PauseCircle className="h-3.5 w-3.5" />
+                Waiting Customer
+              </TabsTrigger>
+              {j.viewerCanViewActivity && (
+                <TabsTrigger value="activity" className="gap-1.5">
+                  <ActivityIcon className="h-3.5 w-3.5" />
+                  Activity
+                </TabsTrigger>
               )}
             </TabsList>
-            <TabsContent value="comments">
+
+            <TabsContent value="info" className="mt-4">
+              <InfoPanel job={j} />
+            </TabsContent>
+            <TabsContent value="comments" className="mt-4">
               <CommentsPanel tenantId={tenant} jobId={jobId} onChanged={invalidate} />
             </TabsContent>
-            <TabsContent value="attachments">
+            <TabsContent value="attachments" className="mt-4">
               <AttachmentsPanel tenantId={tenant} jobId={jobId} onChanged={invalidate} />
             </TabsContent>
+            <TabsContent value="vendor" className="mt-4">
+              <VendorPanel job={j} onChanged={invalidate} />
+            </TabsContent>
+            <TabsContent value="waiting_customer" className="mt-4">
+              <WaitingCustomerPanel job={j} />
+            </TabsContent>
             {j.viewerCanViewActivity && (
-              <TabsContent value="activity">
+              <TabsContent value="activity" className="mt-4">
                 <ActivityPanel tenantId={tenant} jobId={jobId} />
-              </TabsContent>
-            )}
-            {j.vendor_referral_required && (
-              <TabsContent value="vendor">
-                <VendorPanel job={j} onChanged={invalidate} />
-              </TabsContent>
-            )}
-            {j.status === "waiting_customer" && (
-              <TabsContent value="waiting_customer">
-                <WaitingCustomerPanel job={j} />
               </TabsContent>
             )}
           </Tabs>
@@ -190,8 +295,10 @@ function JobDetailPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Actions</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <ActionsPanel
@@ -203,8 +310,10 @@ function JobDetailPage() {
           </Card>
           {j.viewerCanAct && (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Edit Info</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Edit Info
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <EditInfoPanel job={j} onChanged={invalidate} />
@@ -217,11 +326,115 @@ function JobDetailPage() {
   );
 }
 
+function MetaItem({
+  label,
+  value,
+  node,
+}: {
+  label: string;
+  value?: string;
+  node?: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 truncate text-sm font-medium">
+        {node ?? value ?? "—"}
+      </div>
+    </div>
+  );
+}
+
+function InfoPanel({ job: j }: { job: any }) {
+  const contractCurrent = (j.contractStatusCurrent ?? null) as ContractStatus | null;
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Customer & Contract</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <Field label="Customer" value={j.n3_customer_name ?? j.n3_customer_code ?? "—"} />
+          <div>
+            <div className="text-xs text-muted-foreground">Contract Status</div>
+            <div className="mt-1">
+              {contractCurrent ? (
+                <ContractStatusBadge status={contractCurrent} />
+              ) : (
+                <span className="text-sm">—</span>
+              )}
+            </div>
+          </div>
+          <Field
+            label="Expiry Date"
+            value={j.contractExpiryCurrent ?? "—"}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Job Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <Field label="Subject" value={j.title} />
+          <div>
+            <div className="text-xs text-muted-foreground">Description</div>
+            <div className="mt-0.5 whitespace-pre-wrap text-sm">
+              {j.description ?? "—"}
+            </div>
+          </div>
+          {j.internal_remark && (
+            <div>
+              <div className="text-xs text-muted-foreground">Internal Remark</div>
+              <div className="mt-0.5 whitespace-pre-wrap text-sm">
+                {j.internal_remark}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-4">
+            <div>
+              <div className="text-xs text-muted-foreground">Priority</div>
+              <div className="mt-1">
+                <PriorityBadge priority={j.priority} />
+              </div>
+            </div>
+            <Field label="Due Date" value={j.due_date ?? "—"} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Assignment</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+          <Field
+            label={j.assignedUserLabel}
+            value={j.assigned_engineer_display_name ?? "Unassigned"}
+          />
+          <Field label="Created By / PIC" value={j.created_by_display_name ?? "—"} />
+          <Field
+            label="Contract at Creation"
+            value={
+              j.contract_status_at_creation
+                ? String(j.contract_status_at_creation).replace(/_/g, " ")
+                : "—"
+            }
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div>{value}</div>
+      <div className="mt-0.5 text-sm">{value}</div>
     </div>
   );
 }
@@ -247,40 +460,97 @@ function CommentsPanel({
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {list.data?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No comments yet.</p>
-        )}
-        {list.data?.map((c) => (
-          <div key={c.id} className="rounded border p-2 text-sm">
-            <div className="text-xs text-muted-foreground">
-              {c.authorName ?? "Unknown"} · {new Date(c.createdAt).toLocaleString()}
-            </div>
-            <div className="whitespace-pre-wrap">{c.body}</div>
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="space-y-2 p-4">
+          <Label htmlFor="new-comment" className="text-xs uppercase tracking-wide text-muted-foreground">
+            Add a comment
+          </Label>
+          <Textarea
+            id="new-comment"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="Share an update, question or note…"
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={busy || !body.trim()}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await addFn({ data: { tenantId, jobId, body } });
+                  setBody("");
+                  qc.invalidateQueries({ queryKey: ["job-comments", tenantId, jobId] });
+                  onChanged();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving…
+                </>
+              ) : (
+                "Post Comment"
+              )}
+            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {list.data?.length === 0 && (
+        <EmptyState
+          icon={<MessageSquare className="h-5 w-5" />}
+          title="No comments yet"
+          hint="Be the first to add an update."
+        />
+      )}
+      <div className="space-y-3">
+        {list.data?.map((c) => (
+          <Card key={c.id} className="border-l-4 border-l-primary/30">
+            <CardContent className="flex gap-3 p-3">
+              <Avatar name={c.authorName} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-medium">
+                    {c.authorName ?? "Unknown"}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                    {new Date(c.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="mt-1 whitespace-pre-wrap text-sm">{c.body}</div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
-      <div>
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="Add a comment…" />
-        <Button
-          className="mt-2"
-          disabled={busy || !body.trim()}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await addFn({ data: { tenantId, jobId, body } });
-              setBody("");
-              qc.invalidateQueries({ queryKey: ["job-comments", tenantId, jobId] });
-              onChanged();
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          Add Comment
-        </Button>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  hint,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-10 text-center">
+      <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
+        {icon}
       </div>
+      <p className="text-sm font-medium">{title}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {action}
     </div>
   );
 }
@@ -324,40 +594,65 @@ function AttachmentsPanel({
   }
 
   return (
-    <div className="space-y-3">
-      <Input
-        type="file"
-        disabled={busy}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void upload(f);
-          e.target.value = "";
-        }}
-      />
-      {err && <p className="text-sm text-destructive">{err}</p>}
-      <div className="space-y-1">
-        {list.data?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No attachments.</p>
-        )}
-        {list.data?.map((a) => (
-          <div key={a.id} className="flex items-center justify-between rounded border p-2 text-sm">
-            <div>
-              <div>{a.fileName}</div>
-              <div className="text-xs text-muted-foreground">
-                {a.uploadedByName ?? "—"} · {new Date(a.createdAt).toLocaleString()}
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                const { url } = await signFn({ data: { tenantId, storagePath: a.storagePath } });
-                window.open(url, "_blank");
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 py-6 text-center text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground">
+            <Upload className="h-5 w-5" aria-hidden />
+            <span>{busy ? "Uploading…" : "Click to upload a file"}</span>
+            <span className="text-xs">Photos, PDFs, or documents</span>
+            <input
+              type="file"
+              className="hidden"
+              disabled={busy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void upload(f);
+                e.target.value = "";
               }}
-            >
-              Open
-            </Button>
-          </div>
+            />
+          </label>
+          {err && (
+            <p className="mt-2 flex items-center gap-1 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" /> {err}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {list.data?.length === 0 && (
+        <EmptyState
+          icon={<Paperclip className="h-5 w-5" />}
+          title="No attachments uploaded"
+          hint="Upload photos, PDFs or supporting documents."
+        />
+      )}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {list.data?.map((a) => (
+          <Card key={a.id}>
+            <CardContent className="flex items-center gap-3 p-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                <FileText className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{a.fileName}</div>
+                <div className="truncate text-[11px] text-muted-foreground">
+                  {a.uploadedByName ?? "—"} · {new Date(a.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label="Download attachment"
+                onClick={async () => {
+                  const { url } = await signFn({ data: { tenantId, storagePath: a.storagePath } });
+                  window.open(url, "_blank");
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
@@ -372,26 +667,39 @@ function ActivityPanel({ tenantId, jobId }: { tenantId: string; jobId: string })
     queryFn: () => listFn({ data: { tenantId, jobId } }),
   });
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {list.data?.length === 0 && (
-        <p className="text-sm text-muted-foreground">No activity yet.</p>
+        <EmptyState
+          icon={<ActivityIcon className="h-5 w-5" />}
+          title="No activity yet"
+        />
       )}
       {list.data?.map((a) => (
-        <div key={a.id} className="rounded border p-2 text-xs">
-          <div className="font-medium">{a.action.replace(/_/g, " ")}</div>
-          <div className="text-muted-foreground">
-            {a.userCode ?? "system"} · {new Date(a.createdAt).toLocaleString()}
-          </div>
-          {(a.before || a.after) && (
-            <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] text-muted-foreground">
-              {JSON.stringify({ before: a.before, after: a.after }, null, 2)}
-            </pre>
-          )}
-        </div>
+        <Card key={a.id}>
+          <CardContent className="p-3 text-xs">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-sm font-medium">
+                {a.action.replace(/_/g, " ")}
+              </span>
+              <span className="shrink-0 text-[11px] text-muted-foreground">
+                {new Date(a.createdAt).toLocaleString()}
+              </span>
+            </div>
+            <div className="mt-0.5 text-muted-foreground">
+              by {a.userCode ?? "system"}
+            </div>
+            {(a.before || a.after) && (
+              <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/50 p-2 text-[10px] text-muted-foreground">
+                {JSON.stringify({ before: a.before, after: a.after }, null, 2)}
+              </pre>
+            )}
+          </CardContent>
+        </Card>
       ))}
     </div>
   );
 }
+
 
 // ---------- Actions ----------
 function ActionsPanel({
@@ -436,135 +744,163 @@ function ActionsPanel({
   const isClosed = ["completed", "cancelled"].includes(job.status);
 
   return (
-    <div className="space-y-2">
-      {err && <p className="text-sm text-destructive">{err}</p>}
+    <div className="space-y-3">
+      {err && (
+        <p className="flex items-start gap-1 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {err}
+        </p>
+      )}
 
-      {job.approval_required && job.approval_status === "waiting_approval" && job.viewerCanApprove && (
-        <div className="rounded border p-2 space-y-2">
-          <div className="text-xs font-medium">Approval required</div>
-          <ApproveDialog
-            onApprove={(t, note) =>
-              run("approve", () =>
-                approveFn({
-                  data: {
-                    tenantId: job.tenant_id,
-                    jobId: job.id,
-                    approvalType: t,
-                    note,
-                  },
-                }),
-              )
-            }
-          />
-          <RejectDialog
-            onReject={(reason, then) =>
-              run("reject", () =>
-                rejectFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason, then },
-                }),
-              )
-            }
-          />
+      {job.approval_required &&
+        job.approval_status === "waiting_approval" &&
+        job.viewerCanApprove && (
+          <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+              <ShieldAlert className="h-3.5 w-3.5" /> Approval required
+            </div>
+            <ApproveDialog
+              onApprove={(t, note) =>
+                run("approve", () =>
+                  approveFn({
+                    data: {
+                      tenantId: job.tenant_id,
+                      jobId: job.id,
+                      approvalType: t,
+                      note,
+                    },
+                  }),
+                )
+              }
+            />
+            <RejectDialog
+              onReject={(reason, then) =>
+                run("reject", () =>
+                  rejectFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason, then },
+                  }),
+                )
+              }
+            />
+          </div>
+        )}
+
+      {/* Primary actions */}
+      {(canStart || canResume) && (
+        <div className="space-y-2">
+          {canStart && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5"
+              disabled={busy !== null}
+              onClick={() =>
+                run("start", () => startFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+              }
+            >
+              <Play className="h-4 w-4" /> Start Job
+            </Button>
+          )}
+          {canResume && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5"
+              variant="secondary"
+              disabled={busy !== null}
+              onClick={() =>
+                run("resume", () =>
+                  resumeFn({
+                    data: {
+                      tenantId: job.tenant_id,
+                      jobId: job.id,
+                      from: job.status === "waiting_vendor" ? "vendor" : "customer",
+                    },
+                  }),
+                )
+              }
+            >
+              <RotateCcw className="h-4 w-4" /> Resume Job
+            </Button>
+          )}
         </div>
       )}
 
-      {canStart && (
-        <Button
-          size="sm"
-          className="w-full"
-          disabled={busy !== null}
-          onClick={() =>
-            run("start", () => startFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
-          }
-        >
-          Start Job
-        </Button>
-      )}
-      {canResume && (
-        <Button
-          size="sm"
-          className="w-full"
-          variant="secondary"
-          disabled={busy !== null}
-          onClick={() =>
-            run("resume", () =>
-              resumeFn({
-                data: {
-                  tenantId: job.tenant_id,
-                  jobId: job.id,
-                  from: job.status === "waiting_vendor" ? "vendor" : "customer",
-                },
-              }),
-            )
-          }
-        >
-          Resume
-        </Button>
-      )}
+      {/* Secondary actions */}
       {job.viewerCanAct && !isClosed && (
         <>
-          <ReassignDialog
-            job={job}
-            engineers={engineers}
-            onSubmit={(assigneeId, reason) =>
-              run("reassign", () =>
-                reassignFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, assigneeId, reason },
-                }),
-              )
-            }
-          />
-          <WaitingCustomerDialog
-            onSubmit={(reason, followUpDate) =>
-              run("wc", () =>
-                wcFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason, followUpDate },
-                }),
-              )
-            }
-          />
-          {job.vendor_ticket_number && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={busy !== null}
-              onClick={() =>
-                run("wv", () => wvFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+          <div className="space-y-2 border-t pt-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Update Status
+            </div>
+            <ReassignDialog
+              job={job}
+              engineers={engineers}
+              onSubmit={(assigneeId, reason) =>
+                run("reassign", () =>
+                  reassignFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, assigneeId, reason },
+                  }),
+                )
               }
-            >
-              Mark Waiting Vendor
-            </Button>
-          )}
-          <CompleteDialog
-            job={job}
-            onSubmit={(note, force) =>
-              run("complete", () =>
-                completeFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, note, force },
-                }),
-              )
-            }
-          />
-          <CancelDialog
-            onSubmit={(reason) =>
-              run("cancel", () =>
-                cancelFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason },
-                }),
-              )
-            }
-          />
+            />
+            <WaitingCustomerDialog
+              onSubmit={(reason, followUpDate) =>
+                run("wc", () =>
+                  wcFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason, followUpDate },
+                  }),
+                )
+              }
+            />
+            {job.vendor_ticket_number && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-1.5"
+                disabled={busy !== null}
+                onClick={() =>
+                  run("wv", () => wvFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+                }
+              >
+                <Truck className="h-4 w-4" /> Mark Waiting Vendor
+              </Button>
+            )}
+          </div>
+
+          {/* Final actions */}
+          <div className="space-y-2 border-t pt-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Close Job
+            </div>
+            <CompleteDialog
+              job={job}
+              onSubmit={(note, force) =>
+                run("complete", () =>
+                  completeFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, note, force },
+                  }),
+                )
+              }
+            />
+            <CancelDialog
+              onSubmit={(reason) =>
+                run("cancel", () =>
+                  cancelFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason },
+                  }),
+                )
+              }
+            />
+          </div>
         </>
       )}
       {isClosed && (
-        <p className="text-xs text-muted-foreground">
+        <p className="rounded-md bg-muted/50 p-2 text-center text-xs text-muted-foreground">
           This job is {job.status}. No further actions.
         </p>
       )}
     </div>
   );
 }
+
 
 function ReassignDialog({
   job,
@@ -844,21 +1180,49 @@ function RejectDialog({
 
 // ---------- Waiting Customer info ----------
 function WaitingCustomerPanel({ job }: { job: any }) {
+  if (job.status !== "waiting_customer") {
+    return (
+      <EmptyState
+        icon={<PauseCircle className="h-5 w-5" />}
+        title="Not waiting for Customer"
+        hint="This job is not currently waiting for Customer response."
+      />
+    );
+  }
   return (
-    <div className="text-sm space-y-1">
-      <div>
-        <span className="text-muted-foreground">Reason: </span>
-        {job.waiting_customer_reason ?? "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">Since: </span>
-        {job.waiting_customer_since ? new Date(job.waiting_customer_since).toLocaleString() : "—"}
-      </div>
-      <div>
-        <span className="text-muted-foreground">Follow-up: </span>
-        {job.waiting_customer_follow_up_date ?? "—"}
-      </div>
-    </div>
+    <Card className="border-amber-200 bg-amber-50/60">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+          <PauseCircle className="h-4 w-4" /> Waiting for Customer
+        </div>
+        <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+          <div>
+            <div className="text-xs text-amber-800/80">Waiting Since</div>
+            <div className="mt-0.5 font-medium">
+              {job.waiting_customer_since
+                ? new Date(job.waiting_customer_since).toLocaleString()
+                : "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-amber-800/80">Follow-up Date</div>
+            <div className="mt-0.5 font-medium">
+              {job.waiting_customer_follow_up_date ?? "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-amber-800/80">Marked By</div>
+            <div className="mt-0.5 font-medium">{job.waiting_customer_by ?? "—"}</div>
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-amber-800/80">Reason</div>
+          <div className="mt-0.5 whitespace-pre-wrap text-sm">
+            {job.waiting_customer_reason ?? "—"}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -872,60 +1236,165 @@ function VendorPanel({ job, onChanged }: { job: any; onChanged: () => void }) {
   const [status, setStatus] = useState(job.vendor_status ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(
+    !!(job.vendor_name || job.vendor_ticket_number || job.vendor_referral_required),
+  );
+  const [copied, setCopied] = useState(false);
+
+  const hasReferral = !!(job.vendor_name || job.vendor_ticket_number);
+
   return (
-    <div className="space-y-2 text-sm">
-      {err && <p className="text-destructive">{err}</p>}
-      <div>
-        <Label>Vendor Name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div>
-        <Label>Vendor Ticket Number</Label>
-        <Input value={ticket} onChange={(e) => setTicket(e.target.value)} />
-      </div>
-      <div>
-        <Label>Follow-up Date</Label>
-        <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
-      </div>
-      <div>
-        <Label>Vendor Status</Label>
-        <Input value={status} onChange={(e) => setStatus(e.target.value)} />
-      </div>
-      <div>
-        <Label>Remark</Label>
-        <Textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={3} />
-      </div>
-      <Button
-        size="sm"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setErr(null);
-          try {
-            await updFn({
-              data: {
-                tenantId: job.tenant_id,
-                jobId: job.id,
-                vendorName: name || null,
-                vendorTicketNumber: ticket || null,
-                vendorFollowUpDate: followUp || null,
-                vendorStatus: status || null,
-                vendorRemark: remark || null,
-              },
-            });
-            onChanged();
-          } catch (e) {
-            setErr(e instanceof Error ? e.message : String(e));
-          } finally {
-            setBusy(false);
+    <div className="space-y-4">
+      {!hasReferral && !showForm && (
+        <EmptyState
+          icon={<Truck className="h-5 w-5" />}
+          title="No vendor referral recorded"
+          hint="Refer this job to an external vendor and track their ticket."
+          action={
+            <Button size="sm" className="mt-2" onClick={() => setShowForm(true)}>
+              Add Vendor Referral
+            </Button>
           }
-        }}
-      >
-        Save Vendor Info
-      </Button>
+        />
+      )}
+
+      {hasReferral && (
+        <Card className="border-l-4 border-l-orange-400 bg-orange-50/40">
+          <CardContent className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Name</div>
+              <div className="mt-0.5 font-medium">{job.vendor_name ?? "—"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Ticket</div>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <span className="font-mono font-semibold">
+                  {job.vendor_ticket_number ?? "—"}
+                </span>
+                {job.vendor_ticket_number && (
+                  <button
+                    type="button"
+                    className="rounded p-1 text-muted-foreground hover:bg-orange-100 hover:text-foreground"
+                    aria-label="Copy ticket number"
+                    onClick={() => {
+                      navigator.clipboard.writeText(job.vendor_ticket_number);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 1500);
+                    }}
+                  >
+                    {copied ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vendor Status</div>
+              <div className="mt-0.5">{job.vendor_status ?? "—"}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Follow-up Date</div>
+              <div className="mt-0.5">{job.vendor_follow_up_date ?? "—"}</div>
+            </div>
+            {job.vendor_remark && (
+              <div className="sm:col-span-2">
+                <div className="text-xs text-muted-foreground">Vendor Remark</div>
+                <div className="mt-0.5 whitespace-pre-wrap">{job.vendor_remark}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {(showForm || hasReferral) && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">
+              {hasReferral ? "Update Vendor Referral" : "Add Vendor Referral"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {err && (
+              <p className="flex items-center gap-1 text-destructive">
+                <AlertCircle className="h-4 w-4" /> {err}
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label>Vendor Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div>
+                <Label>Vendor Ticket Number</Label>
+                <Input value={ticket} onChange={(e) => setTicket(e.target.value)} />
+              </div>
+              <div>
+                <Label>Follow-up Date</Label>
+                <Input
+                  type="date"
+                  value={followUp}
+                  onChange={(e) => setFollowUp(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Vendor Status</Label>
+                <Input value={status} onChange={(e) => setStatus(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Remark</Label>
+              <Textarea
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setErr(null);
+                  try {
+                    await updFn({
+                      data: {
+                        tenantId: job.tenant_id,
+                        jobId: job.id,
+                        vendorName: name || null,
+                        vendorTicketNumber: ticket || null,
+                        vendorFollowUpDate: followUp || null,
+                        vendorStatus: status || null,
+                        vendorRemark: remark || null,
+                      },
+                    });
+                    onChanged();
+                  } catch (e) {
+                    setErr(e instanceof Error ? e.message : String(e));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving…
+                  </>
+                ) : (
+                  "Save Vendor Info"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
 
 // ---------- Edit info ----------
 function EditInfoPanel({ job, onChanged }: { job: any; onChanged: () => void }) {
