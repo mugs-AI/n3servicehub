@@ -29,6 +29,18 @@ export type ContractStatusSummary = {
   staleCount: number;
   failedCount: number;
   lastCalculatedAt: string | null;
+  configError: string | null;
+};
+
+export type ParsingDiagnosticRow = {
+  source: "sales_invoice" | "delivery_order";
+  docId: string;
+  docNo: string | null;
+  docDate: string | null;
+  customerCode: string | null;
+  reason: string;
+  lineCount: number;
+  missingStockCount: number;
 };
 
 export const getContractStatusSummary = createServerFn({ method: "POST" })
@@ -37,7 +49,7 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ContractStatusSummary> => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
 
-    const [{ count: totalCustomers }, { data: snaps }] = await Promise.all([
+    const [{ count: totalCustomers }, { data: snaps }, { data: gs }] = await Promise.all([
       context.supabase
         .from("servicehub_customers")
         .select("id", { count: "exact", head: true })
@@ -46,6 +58,11 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
         .from("customer_contract_snapshots")
         .select("contract_status, is_stale, calculation_error, last_calculated_at")
         .eq("tenant_id", data.tenantId),
+      context.supabase
+        .from("general_settings")
+        .select("due_soon_days")
+        .eq("tenant_id", data.tenantId)
+        .maybeSingle(),
     ]);
     const counts: Record<ContractStatus, number> = {
       active: 0,
@@ -66,6 +83,12 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
         last = s.last_calculated_at;
       }
     }
+    let configError: string | null = null;
+    if (!gs) {
+      configError = "General Settings row missing for this tenant.";
+    } else if (typeof gs.due_soon_days !== "number" || gs.due_soon_days <= 0) {
+      configError = "General Settings 'due_soon_days' is not configured.";
+    }
     return {
       totalCustomers: totalCustomers ?? 0,
       snapshotCount: (snaps ?? []).length,
@@ -73,6 +96,7 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
       staleCount: stale,
       failedCount: failed,
       lastCalculatedAt: last,
+      configError,
     };
   });
 
@@ -143,4 +167,77 @@ export const recalculateContractStatus = createServerFn({ method: "POST" })
     const engine = new ContractStatusEngine(supabaseAdmin);
     const result = await engine.recalculateTenant(data.tenantId);
     return result;
+  });
+
+/**
+ * Diagnostics: return synced Sales Invoices / Delivery Orders where the
+ * payload has no recognized line collection or no line contains a Stock Code.
+ * Safe fields only — no pricing, no raw payloads.
+ */
+export const getContractParsingDiagnostics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { tenantId: string; limit?: number }) => i)
+  .handler(async ({ data, context }): Promise<ParsingDiagnosticRow[]> => {
+    await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { parseDocumentLines } = await import(
+      "@/lib/contract-status/ContractStatusEngine.server"
+    );
+    const cap = Math.min(data.limit ?? 100, 500);
+
+    const [{ data: invoices }, { data: dos }] = await Promise.all([
+      supabaseAdmin
+        .from("servicehub_sales_invoices")
+        .select("n3_record_id, doc_no, doc_date, n3_customer_code, is_cancelled, payload")
+        .eq("tenant_id", data.tenantId)
+        .order("doc_date", { ascending: false })
+        .limit(2000),
+      supabaseAdmin
+        .from("servicehub_delivery_orders")
+        .select("n3_record_id, doc_no, doc_date, n3_customer_code, is_cancelled, payload")
+        .eq("tenant_id", data.tenantId)
+        .order("doc_date", { ascending: false })
+        .limit(2000),
+    ]);
+
+    const out: ParsingDiagnosticRow[] = [];
+    const scan = (
+      source: "sales_invoice" | "delivery_order",
+      rows: Array<{
+        n3_record_id: string;
+        doc_no: string | null;
+        doc_date: string | null;
+        n3_customer_code: string | null;
+        is_cancelled: boolean | null;
+        payload: unknown;
+      }> | null,
+    ) => {
+      for (const r of rows ?? []) {
+        if (r.is_cancelled) continue;
+        const parsed = parseDocumentLines(r.payload);
+        let reason: string | null = null;
+        if (!parsed.hadLinesArray) {
+          reason = "No recognized line collection (details/lines/items) in payload.";
+        } else if (parsed.codes.length === 0) {
+          reason = "Lines present but no Stock Code field found on any line.";
+        } else if (parsed.missingStockCount > 0) {
+          reason = `${parsed.missingStockCount} of ${parsed.lineCount} line(s) missing Stock Code.`;
+        }
+        if (reason) {
+          out.push({
+            source,
+            docId: r.n3_record_id,
+            docNo: r.doc_no,
+            docDate: r.doc_date,
+            customerCode: r.n3_customer_code,
+            reason,
+            lineCount: parsed.lineCount,
+            missingStockCount: parsed.missingStockCount,
+          });
+        }
+      }
+    };
+    scan("sales_invoice", invoices);
+    scan("delivery_order", dos);
+    return out.slice(0, cap);
   });

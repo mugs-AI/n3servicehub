@@ -17,8 +17,10 @@ import {
   getContractStatusSummary,
   listContractSnapshots,
   recalculateContractStatus,
+  getContractParsingDiagnostics,
   type ContractStatusSummary,
   type ContractSnapshotRow,
+  type ParsingDiagnosticRow,
 } from "@/lib/contract-status.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/sync")({
@@ -87,12 +89,14 @@ function SyncConsole() {
   const fetchContractSummary = useServerFn(getContractStatusSummary);
   const fetchContractSnapshots = useServerFn(listContractSnapshots);
   const runRecalc = useServerFn(recalculateContractStatus);
+  const fetchDiagnostics = useServerFn(getContractParsingDiagnostics);
 
   const [tenants, setTenants] = useState<Array<{ tenantId: string; name: string }>>([]);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [report, setReport] = useState<SyncStatusReport | null>(null);
   const [contractSummary, setContractSummary] = useState<ContractStatusSummary | null>(null);
   const [snapshots, setSnapshots] = useState<ContractSnapshotRow[]>([]);
+  const [diagnostics, setDiagnostics] = useState<ParsingDiagnosticRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -165,6 +169,20 @@ function SyncConsole() {
     try {
       await runRecalc({ data: { tenantId } });
       await refresh(tenantId);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runDiagnostics = async () => {
+    if (!tenantId) return;
+    setBusy("__diag__");
+    setErr(null);
+    try {
+      const rows = await fetchDiagnostics({ data: { tenantId, limit: 100 } });
+      setDiagnostics(rows);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -301,6 +319,15 @@ function SyncConsole() {
             </button>
           </div>
 
+          {contractSummary.configError && (
+            <div className="mb-4 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <strong>Configuration error:</strong> {contractSummary.configError} Snapshots are
+              kept stale until this is fixed. Open{" "}
+              <a className="underline" href="/settings">Settings → General</a> to configure Due
+              Soon days.
+            </div>
+          )}
+
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             <StatCard label="Customers" value={contractSummary.totalCustomers} />
             <StatCard label="Snapshots" value={contractSummary.snapshotCount} />
@@ -365,6 +392,58 @@ function SyncConsole() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Document Parsing Diagnostics</h3>
+              <button
+                className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
+                onClick={runDiagnostics}
+                disabled={!tenantId || busy !== null}
+              >
+                {busy === "__diag__" ? "Scanning…" : "Scan payloads"}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-gray-500">
+              Lists synced Sales Invoices / Delivery Orders where no line collection or Stock
+              Code field was found. No pricing or raw payload is exposed.
+            </p>
+            {diagnostics && diagnostics.length === 0 && (
+              <p className="text-sm text-green-700">No parsing issues found.</p>
+            )}
+            {diagnostics && diagnostics.length > 0 && (
+              <div className="overflow-x-auto rounded border">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th className="px-3 py-2">Source</th>
+                      <th className="px-3 py-2">Doc No</th>
+                      <th className="px-3 py-2">Doc Date</th>
+                      <th className="px-3 py-2">Customer</th>
+                      <th className="px-3 py-2">Lines</th>
+                      <th className="px-3 py-2">Missing</th>
+                      <th className="px-3 py-2">Reason</th>
+                      <th className="px-3 py-2">Doc ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {diagnostics.map((d) => (
+                      <tr key={`${d.source}:${d.docId}`} className="border-t">
+                        <td className="px-3 py-2">{d.source}</td>
+                        <td className="px-3 py-2">{d.docNo ?? "—"}</td>
+                        <td className="px-3 py-2">{d.docDate ?? "—"}</td>
+                        <td className="px-3 py-2">{d.customerCode ?? "—"}</td>
+                        <td className="px-3 py-2">{d.lineCount}</td>
+                        <td className="px-3 py-2">{d.missingStockCount}</td>
+                        <td className="px-3 py-2 text-red-700">{d.reason}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{d.docId}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </section>
       )}
