@@ -263,8 +263,10 @@ export type Database = {
       }
       general_settings: {
         Row: {
+          assigned_user_label: string
           created_at: string
           due_soon_days: number
+          job_assignment_mode: string
           job_prefix: string
           notification_enabled: boolean
           tenant_id: string
@@ -272,8 +274,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_user_label?: string
           created_at?: string
           due_soon_days?: number
+          job_assignment_mode?: string
           job_prefix?: string
           notification_enabled?: boolean
           tenant_id: string
@@ -281,8 +285,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_user_label?: string
           created_at?: string
           due_soon_days?: number
+          job_assignment_mode?: string
           job_prefix?: string
           notification_enabled?: boolean
           tenant_id?: string
@@ -446,6 +452,12 @@ export type Database = {
           assigned_engineer_user_type: string | null
           assigned_n3_user_id: string | null
           assigned_to: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_note: string | null
           contract_document_no_at_creation: string | null
           contract_expiry_at_creation: string | null
           contract_status_at_creation: string | null
@@ -469,19 +481,32 @@ export type Database = {
           n3_stock_code: string | null
           n3_stock_id: string | null
           priority: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           scheduled_end: string | null
           scheduled_start: string | null
+          started_at: string | null
+          started_by: string | null
           status: string
           tenant_id: string
           title: string
           updated_at: string
           vendor_follow_up_date: string | null
+          vendor_marked_at: string | null
+          vendor_marked_by: string | null
           vendor_name: string | null
           vendor_referral_required: boolean
           vendor_referred_at: string | null
+          vendor_remark: string | null
           vendor_resolution: string | null
           vendor_status: string | null
           vendor_ticket_number: string | null
+          waiting_customer_follow_up_date: string | null
+          waiting_customer_marked_at: string | null
+          waiting_customer_marked_by: string | null
+          waiting_customer_reason: string | null
+          waiting_customer_since: string | null
         }
         Insert: {
           actual_end?: string | null
@@ -496,6 +521,12 @@ export type Database = {
           assigned_engineer_user_type?: string | null
           assigned_n3_user_id?: string | null
           assigned_to?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_note?: string | null
           contract_document_no_at_creation?: string | null
           contract_expiry_at_creation?: string | null
           contract_status_at_creation?: string | null
@@ -519,19 +550,32 @@ export type Database = {
           n3_stock_code?: string | null
           n3_stock_id?: string | null
           priority?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          started_at?: string | null
+          started_by?: string | null
           status?: string
           tenant_id: string
           title: string
           updated_at?: string
           vendor_follow_up_date?: string | null
+          vendor_marked_at?: string | null
+          vendor_marked_by?: string | null
           vendor_name?: string | null
           vendor_referral_required?: boolean
           vendor_referred_at?: string | null
+          vendor_remark?: string | null
           vendor_resolution?: string | null
           vendor_status?: string | null
           vendor_ticket_number?: string | null
+          waiting_customer_follow_up_date?: string | null
+          waiting_customer_marked_at?: string | null
+          waiting_customer_marked_by?: string | null
+          waiting_customer_reason?: string | null
+          waiting_customer_since?: string | null
         }
         Update: {
           actual_end?: string | null
@@ -546,6 +590,12 @@ export type Database = {
           assigned_engineer_user_type?: string | null
           assigned_n3_user_id?: string | null
           assigned_to?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_note?: string | null
           contract_document_no_at_creation?: string | null
           contract_expiry_at_creation?: string | null
           contract_status_at_creation?: string | null
@@ -569,19 +619,32 @@ export type Database = {
           n3_stock_code?: string | null
           n3_stock_id?: string | null
           priority?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          started_at?: string | null
+          started_by?: string | null
           status?: string
           tenant_id?: string
           title?: string
           updated_at?: string
           vendor_follow_up_date?: string | null
+          vendor_marked_at?: string | null
+          vendor_marked_by?: string | null
           vendor_name?: string | null
           vendor_referral_required?: boolean
           vendor_referred_at?: string | null
+          vendor_remark?: string | null
           vendor_resolution?: string | null
           vendor_status?: string | null
           vendor_ticket_number?: string | null
+          waiting_customer_follow_up_date?: string | null
+          waiting_customer_marked_at?: string | null
+          waiting_customer_marked_by?: string | null
+          waiting_customer_reason?: string | null
+          waiting_customer_since?: string | null
         }
         Relationships: [
           {
@@ -599,8 +662,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobs_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "jobs_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_rejected_by_fkey"
+            columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_started_by_fkey"
+            columns: ["started_by"]
             isOneToOne: false
             referencedRelation: "users_local"
             referencedColumns: ["id"]
@@ -610,6 +701,20 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_vendor_marked_by_fkey"
+            columns: ["vendor_marked_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_waiting_customer_marked_by_fkey"
+            columns: ["waiting_customer_marked_by"]
+            isOneToOne: false
+            referencedRelation: "users_local"
             referencedColumns: ["id"]
           },
         ]
@@ -1431,6 +1536,13 @@ export type Database = {
         | "job_comment"
         | "renewal_due"
         | "system"
+        | "job_reassigned"
+        | "job_approved"
+        | "job_rejected"
+        | "approval_requested"
+        | "waiting_customer_followup"
+        | "waiting_vendor_followup"
+        | "high_priority_assigned"
       sync_entity:
         | "customers"
         | "stock"
@@ -1575,6 +1687,13 @@ export const Constants = {
         "job_comment",
         "renewal_due",
         "system",
+        "job_reassigned",
+        "job_approved",
+        "job_rejected",
+        "approval_requested",
+        "waiting_customer_followup",
+        "waiting_vendor_followup",
+        "high_priority_assigned",
       ],
       sync_entity: [
         "customers",
