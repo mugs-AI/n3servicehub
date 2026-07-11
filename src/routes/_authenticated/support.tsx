@@ -362,9 +362,6 @@ function SelectedCustomer({
               </Table>
             </div>
           )}
-          <p className="mt-2 text-xs text-muted-foreground">
-            Full Jobs List will be available in Milestone 1.5.
-          </p>
         </CardContent>
       </Card>
     </div>
