@@ -73,12 +73,19 @@ export const updateApprovalRule = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      initial_job_status?: InitialJobStatus;
+      approval_required?: boolean;
+      is_active?: boolean;
+    } = {};
     if (data.initialJobStatus !== undefined) patch.initial_job_status = data.initialJobStatus;
     if (data.approvalRequired !== undefined) patch.approval_required = data.approvalRequired;
     if (data.isActive !== undefined) patch.is_active = data.isActive;
     const { error } = await context.supabase
       .from("approval_rules")
+      .update(patch)
+      .eq("id", data.id)
+      .eq("tenant_id", data.tenantId);
       .update(patch)
       .eq("id", data.id)
       .eq("tenant_id", data.tenantId);
