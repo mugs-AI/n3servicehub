@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/status")({
+export const Route = createFileRoute("/_authenticated/admin/dev/status")({
   head: () => ({
     meta: [
       { title: "System Status — ServiceHub" },

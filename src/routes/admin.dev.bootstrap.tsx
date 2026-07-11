@@ -21,7 +21,7 @@ import {
   type BootstrapState,
 } from "@/lib/bootstrap.functions";
 
-export const Route = createFileRoute("/admin/bootstrap")({
+export const Route = createFileRoute("/admin/dev/bootstrap")({
   component: BootstrapPage,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
@@ -126,7 +126,7 @@ function BootstrapPage() {
         <div className="mt-6 flex gap-2">
           <Link
             to="/auth"
-            search={{ redirect: "/admin/sync", reason: "auth_required" as const }}
+            search={{ redirect: "/admin/dev/sync", reason: "auth_required" as const }}
             className="rounded bg-black px-3 py-1.5 text-sm text-white"
           >
             Sign in
@@ -154,7 +154,7 @@ function BootstrapPage() {
         <div className="mt-6 flex gap-2">
           <button
             className="rounded bg-black px-3 py-1.5 text-sm text-white"
-            onClick={() => router.navigate({ to: "/admin/sync" })}
+            onClick={() => router.navigate({ to: "/admin/dev/sync" })}
           >
             Go to Sync Console
           </button>

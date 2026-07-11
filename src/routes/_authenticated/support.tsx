@@ -425,7 +425,7 @@ function OperationalCards({
         ))}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        <Link to="/admin/sync" className="underline">
+        <Link to="/admin/dev/sync" className="underline">
           Administrator Verification Console
         </Link>
       </p>

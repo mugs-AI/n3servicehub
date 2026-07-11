@@ -9,28 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StatusRouteImport } from './routes/status'
 import { Route as N3LaunchRouteImport } from './routes/n3-launch'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StatusApiRouteImport } from './routes/status.api'
-import { Route as AdminBootstrapRouteImport } from './routes/admin.bootstrap'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
+import { Route as AdminDevBootstrapRouteImport } from './routes/admin.dev.bootstrap'
 import { Route as AuthenticatedJobsQuickRouteImport } from './routes/_authenticated/jobs.quick'
 import { Route as AuthenticatedJobsNewRouteImport } from './routes/_authenticated/jobs.new'
 import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
-import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 import { Route as AuthenticatedJobsCreatedIdRouteImport } from './routes/_authenticated/jobs.created.$id'
+import { Route as AuthenticatedAdminDevSyncRouteImport } from './routes/_authenticated/admin/dev/sync'
+import { Route as AuthenticatedAdminDevStatusRouteImport } from './routes/_authenticated/admin/dev/status'
+import { Route as AuthenticatedAdminDevStatusApiRouteImport } from './routes/_authenticated/admin/dev/status.api'
 
-const StatusRoute = StatusRouteImport.update({
-  id: '/status',
-  path: '/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const N3LaunchRoute = N3LaunchRouteImport.update({
   id: '/n3-launch',
   path: '/n3-launch',
@@ -50,16 +45,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StatusApiRoute = StatusApiRouteImport.update({
-  id: '/api',
-  path: '/api',
-  getParentRoute: () => StatusRoute,
-} as any)
-const AdminBootstrapRoute = AdminBootstrapRouteImport.update({
-  id: '/admin/bootstrap',
-  path: '/admin/bootstrap',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -74,6 +59,11 @@ const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
   id: '/jobs/',
   path: '/jobs/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AdminDevBootstrapRoute = AdminDevBootstrapRouteImport.update({
+  id: '/admin/dev/bootstrap',
+  path: '/admin/dev/bootstrap',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedJobsQuickRoute = AuthenticatedJobsQuickRouteImport.update({
   id: '/jobs/quick',
@@ -90,11 +80,6 @@ const AuthenticatedJobsJobIdRoute = AuthenticatedJobsJobIdRouteImport.update({
   path: '/jobs/$jobId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminSyncRoute = AuthenticatedAdminSyncRouteImport.update({
-  id: '/admin/sync',
-  path: '/admin/sync',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const ApiPublicHooksSyncTickRoute = ApiPublicHooksSyncTickRouteImport.update({
   id: '/api/public/hooks/sync-tick',
   path: '/api/public/hooks/sync-tick',
@@ -106,40 +91,58 @@ const AuthenticatedJobsCreatedIdRoute =
     path: '/jobs/created/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminDevSyncRoute =
+  AuthenticatedAdminDevSyncRouteImport.update({
+    id: '/admin/dev/sync',
+    path: '/admin/dev/sync',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminDevStatusRoute =
+  AuthenticatedAdminDevStatusRouteImport.update({
+    id: '/admin/dev/status',
+    path: '/admin/dev/status',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminDevStatusApiRoute =
+  AuthenticatedAdminDevStatusApiRouteImport.update({
+    id: '/api',
+    path: '/api',
+    getParentRoute: () => AuthenticatedAdminDevStatusRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
-  '/status': typeof StatusRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/support': typeof AuthenticatedSupportRoute
-  '/admin/bootstrap': typeof AdminBootstrapRoute
-  '/status/api': typeof StatusApiRoute
-  '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
+  '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
+  '/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
   '/jobs/created/$id': typeof AuthenticatedJobsCreatedIdRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
+  '/admin/dev/status/api': typeof AuthenticatedAdminDevStatusApiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
-  '/status': typeof StatusRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
   '/support': typeof AuthenticatedSupportRoute
-  '/admin/bootstrap': typeof AdminBootstrapRoute
-  '/status/api': typeof StatusApiRoute
-  '/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
+  '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
+  '/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
+  '/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
   '/jobs/created/$id': typeof AuthenticatedJobsCreatedIdRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
+  '/admin/dev/status/api': typeof AuthenticatedAdminDevStatusApiRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,18 +150,18 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/n3-launch': typeof N3LaunchRoute
-  '/status': typeof StatusRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
-  '/admin/bootstrap': typeof AdminBootstrapRoute
-  '/status/api': typeof StatusApiRoute
-  '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/new': typeof AuthenticatedJobsNewRoute
   '/_authenticated/jobs/quick': typeof AuthenticatedJobsQuickRoute
+  '/admin/dev/bootstrap': typeof AdminDevBootstrapRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/_authenticated/admin/dev/status': typeof AuthenticatedAdminDevStatusRouteWithChildren
+  '/_authenticated/admin/dev/sync': typeof AuthenticatedAdminDevSyncRoute
   '/_authenticated/jobs/created/$id': typeof AuthenticatedJobsCreatedIdRoute
   '/api/public/hooks/sync-tick': typeof ApiPublicHooksSyncTickRoute
+  '/_authenticated/admin/dev/status/api': typeof AuthenticatedAdminDevStatusApiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,53 +169,53 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/n3-launch'
-    | '/status'
     | '/settings'
     | '/support'
-    | '/admin/bootstrap'
-    | '/status/api'
-    | '/admin/sync'
     | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
+    | '/admin/dev/bootstrap'
     | '/jobs/'
+    | '/admin/dev/status'
+    | '/admin/dev/sync'
     | '/jobs/created/$id'
     | '/api/public/hooks/sync-tick'
+    | '/admin/dev/status/api'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/n3-launch'
-    | '/status'
     | '/settings'
     | '/support'
-    | '/admin/bootstrap'
-    | '/status/api'
-    | '/admin/sync'
     | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
+    | '/admin/dev/bootstrap'
     | '/jobs'
+    | '/admin/dev/status'
+    | '/admin/dev/sync'
     | '/jobs/created/$id'
     | '/api/public/hooks/sync-tick'
+    | '/admin/dev/status/api'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/n3-launch'
-    | '/status'
     | '/_authenticated/settings'
     | '/_authenticated/support'
-    | '/admin/bootstrap'
-    | '/status/api'
-    | '/_authenticated/admin/sync'
     | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/new'
     | '/_authenticated/jobs/quick'
+    | '/admin/dev/bootstrap'
     | '/_authenticated/jobs/'
+    | '/_authenticated/admin/dev/status'
+    | '/_authenticated/admin/dev/sync'
     | '/_authenticated/jobs/created/$id'
     | '/api/public/hooks/sync-tick'
+    | '/_authenticated/admin/dev/status/api'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -220,20 +223,12 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   N3LaunchRoute: typeof N3LaunchRoute
-  StatusRoute: typeof StatusRouteWithChildren
-  AdminBootstrapRoute: typeof AdminBootstrapRoute
+  AdminDevBootstrapRoute: typeof AdminDevBootstrapRoute
   ApiPublicHooksSyncTickRoute: typeof ApiPublicHooksSyncTickRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/status': {
-      id: '/status'
-      path: '/status'
-      fullPath: '/status'
-      preLoaderRoute: typeof StatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/n3-launch': {
       id: '/n3-launch'
       path: '/n3-launch'
@@ -262,20 +257,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/status/api': {
-      id: '/status/api'
-      path: '/api'
-      fullPath: '/status/api'
-      preLoaderRoute: typeof StatusApiRouteImport
-      parentRoute: typeof StatusRoute
-    }
-    '/admin/bootstrap': {
-      id: '/admin/bootstrap'
-      path: '/admin/bootstrap'
-      fullPath: '/admin/bootstrap'
-      preLoaderRoute: typeof AdminBootstrapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/support': {
       id: '/_authenticated/support'
       path: '/support'
@@ -296,6 +277,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/jobs/'
       preLoaderRoute: typeof AuthenticatedJobsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/dev/bootstrap': {
+      id: '/admin/dev/bootstrap'
+      path: '/admin/dev/bootstrap'
+      fullPath: '/admin/dev/bootstrap'
+      preLoaderRoute: typeof AdminDevBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/jobs/quick': {
       id: '/_authenticated/jobs/quick'
@@ -318,13 +306,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/sync': {
-      id: '/_authenticated/admin/sync'
-      path: '/admin/sync'
-      fullPath: '/admin/sync'
-      preLoaderRoute: typeof AuthenticatedAdminSyncRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/api/public/hooks/sync-tick': {
       id: '/api/public/hooks/sync-tick'
       path: '/api/public/hooks/sync-tick'
@@ -339,52 +320,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsCreatedIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/dev/sync': {
+      id: '/_authenticated/admin/dev/sync'
+      path: '/admin/dev/sync'
+      fullPath: '/admin/dev/sync'
+      preLoaderRoute: typeof AuthenticatedAdminDevSyncRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/dev/status': {
+      id: '/_authenticated/admin/dev/status'
+      path: '/admin/dev/status'
+      fullPath: '/admin/dev/status'
+      preLoaderRoute: typeof AuthenticatedAdminDevStatusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/dev/status/api': {
+      id: '/_authenticated/admin/dev/status/api'
+      path: '/api'
+      fullPath: '/admin/dev/status/api'
+      preLoaderRoute: typeof AuthenticatedAdminDevStatusApiRouteImport
+      parentRoute: typeof AuthenticatedAdminDevStatusRoute
+    }
   }
 }
+
+interface AuthenticatedAdminDevStatusRouteChildren {
+  AuthenticatedAdminDevStatusApiRoute: typeof AuthenticatedAdminDevStatusApiRoute
+}
+
+const AuthenticatedAdminDevStatusRouteChildren: AuthenticatedAdminDevStatusRouteChildren =
+  {
+    AuthenticatedAdminDevStatusApiRoute: AuthenticatedAdminDevStatusApiRoute,
+  }
+
+const AuthenticatedAdminDevStatusRouteWithChildren =
+  AuthenticatedAdminDevStatusRoute._addFileChildren(
+    AuthenticatedAdminDevStatusRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
-  AuthenticatedAdminSyncRoute: typeof AuthenticatedAdminSyncRoute
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsNewRoute: typeof AuthenticatedJobsNewRoute
   AuthenticatedJobsQuickRoute: typeof AuthenticatedJobsQuickRoute
   AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
+  AuthenticatedAdminDevStatusRoute: typeof AuthenticatedAdminDevStatusRouteWithChildren
+  AuthenticatedAdminDevSyncRoute: typeof AuthenticatedAdminDevSyncRoute
   AuthenticatedJobsCreatedIdRoute: typeof AuthenticatedJobsCreatedIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
-  AuthenticatedAdminSyncRoute: AuthenticatedAdminSyncRoute,
   AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
   AuthenticatedJobsNewRoute: AuthenticatedJobsNewRoute,
   AuthenticatedJobsQuickRoute: AuthenticatedJobsQuickRoute,
   AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
+  AuthenticatedAdminDevStatusRoute:
+    AuthenticatedAdminDevStatusRouteWithChildren,
+  AuthenticatedAdminDevSyncRoute: AuthenticatedAdminDevSyncRoute,
   AuthenticatedJobsCreatedIdRoute: AuthenticatedJobsCreatedIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface StatusRouteChildren {
-  StatusApiRoute: typeof StatusApiRoute
-}
-
-const StatusRouteChildren: StatusRouteChildren = {
-  StatusApiRoute: StatusApiRoute,
-}
-
-const StatusRouteWithChildren =
-  StatusRoute._addFileChildren(StatusRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   N3LaunchRoute: N3LaunchRoute,
-  StatusRoute: StatusRouteWithChildren,
-  AdminBootstrapRoute: AdminBootstrapRoute,
+  AdminDevBootstrapRoute: AdminDevBootstrapRoute,
   ApiPublicHooksSyncTickRoute: ApiPublicHooksSyncTickRoute,
 }
 export const routeTree = rootRouteImport
