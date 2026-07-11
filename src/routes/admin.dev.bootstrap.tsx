@@ -58,7 +58,7 @@ function BootstrapPage() {
   const [companyName, setCompanyName] = useState("");
   const [n3TenantCode, setN3TenantCode] = useState("");
   const [n3CompanyName, setN3CompanyName] = useState("");
-  const [n3ApiKeyRef, setN3ApiKeyRef] = useState("N3_PAT_MUGS");
+  const [n3ApiKeyRef, setN3ApiKeyRef] = useState("N3_API_KEY");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminDisplayName, setAdminDisplayName] = useState("");
@@ -173,16 +173,14 @@ function BootstrapPage() {
         </p>
       </header>
 
-      <div className="mb-6 rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-        <p className="font-medium">Storing the N3 API key</p>
+      <div className="mb-6 rounded border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <p className="font-medium">N3 API key is already stored securely</p>
         <p className="mt-1">
-          The actual N3 API key <strong>must be stored as a Lovable Cloud
-          Secret using the same name</strong> you enter below. Only the
-          reference name is stored in the database — never the raw key.
-        </p>
-        <p className="mt-2">
-          Example: <code className="rounded bg-white px-1">n3_api_key_ref = N3_PAT_MUGS</code>{" "}
-          → Lovable Cloud Secret name <code className="rounded bg-white px-1">N3_PAT_MUGS</code>.
+          A Lovable Cloud Secret named{" "}
+          <code className="rounded bg-white px-1">N3_API_KEY</code> holds the
+          raw PAT. Leave the reference field below as{" "}
+          <code className="rounded bg-white px-1">N3_API_KEY</code> unless you
+          added the secret under a different name.
         </p>
       </div>
 
