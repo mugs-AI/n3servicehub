@@ -442,12 +442,23 @@ export type Database = {
           approval_type: string | null
           approved_at: string | null
           approved_by: string | null
+          assigned_engineer_display_name: string | null
+          assigned_engineer_user_type: string | null
+          assigned_n3_user_id: string | null
           assigned_to: string | null
+          contract_document_no_at_creation: string | null
+          contract_expiry_at_creation: string | null
+          contract_status_at_creation: string | null
           created_at: string
           created_by: string | null
+          created_by_display_name: string | null
+          created_by_user_code: string | null
+          created_by_user_type: string | null
           description: string | null
           due_date: string | null
+          entry_mode: string | null
           id: string
+          internal_remark: string | null
           job_no: string
           job_service_type: string | null
           n3_customer_code: string | null
@@ -481,12 +492,23 @@ export type Database = {
           approval_type?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assigned_engineer_display_name?: string | null
+          assigned_engineer_user_type?: string | null
+          assigned_n3_user_id?: string | null
           assigned_to?: string | null
+          contract_document_no_at_creation?: string | null
+          contract_expiry_at_creation?: string | null
+          contract_status_at_creation?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_display_name?: string | null
+          created_by_user_code?: string | null
+          created_by_user_type?: string | null
           description?: string | null
           due_date?: string | null
+          entry_mode?: string | null
           id?: string
+          internal_remark?: string | null
           job_no: string
           job_service_type?: string | null
           n3_customer_code?: string | null
@@ -520,12 +542,23 @@ export type Database = {
           approval_type?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assigned_engineer_display_name?: string | null
+          assigned_engineer_user_type?: string | null
+          assigned_n3_user_id?: string | null
           assigned_to?: string | null
+          contract_document_no_at_creation?: string | null
+          contract_expiry_at_creation?: string | null
+          contract_status_at_creation?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_display_name?: string | null
+          created_by_user_code?: string | null
+          created_by_user_type?: string | null
           description?: string | null
           due_date?: string | null
+          entry_mode?: string | null
           id?: string
+          internal_remark?: string | null
           job_no?: string
           job_service_type?: string | null
           n3_customer_code?: string | null
