@@ -251,6 +251,56 @@ export const createJob = createServerFn({ method: "POST" })
       });
     }
 
+    // Activity + notification
+    await context.supabase.from("activity_logs").insert({
+      tenant_id: data.tenantId,
+      entity_type: "job",
+      entity_id: inserted.id,
+      action: approvalRequired ? "job_created_pending_approval" : "job_created",
+      after_value: {
+        contractStatus,
+        approvalRequired,
+        assignedTo: assignedDisplayName,
+        mode: data.mode,
+      },
+      user_code: m.email,
+      user_type: "local_user",
+      result: "success",
+    });
+    if (assignedToLocalId && assignedToLocalId !== m.id) {
+      await context.supabase.from("notifications").insert({
+        tenant_id: data.tenantId,
+        recipient_id: assignedToLocalId,
+        type: "job_assigned",
+        title: `Job ${inserted.job_no} assigned`,
+        body: subject,
+        entity_table: "jobs",
+        entity_id: inserted.id,
+      });
+    }
+    if (approvalRequired) {
+      // Notify tenant admins
+      const { data: admins } = await context.supabase
+        .from("users_local")
+        .select("id")
+        .eq("tenant_id", data.tenantId)
+        .in("role", ["owner", "admin"])
+        .eq("is_active", true);
+      for (const a of (admins ?? []) as Array<{ id: string }>) {
+        if (a.id === m.id) continue;
+        await context.supabase.from("notifications").insert({
+          tenant_id: data.tenantId,
+          recipient_id: a.id,
+          type: "approval_requested",
+          title: `Approval needed: ${inserted.job_no}`,
+          body: subject,
+          entity_table: "jobs",
+          entity_id: inserted.id,
+        });
+      }
+    }
+
+
     return {
       id: inserted.id,
       jobNo: inserted.job_no,
