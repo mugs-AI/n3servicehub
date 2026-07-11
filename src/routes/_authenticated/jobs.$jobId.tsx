@@ -460,40 +460,97 @@ function CommentsPanel({
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {list.data?.length === 0 && (
-          <p className="text-sm text-muted-foreground">No comments yet.</p>
-        )}
-        {list.data?.map((c) => (
-          <div key={c.id} className="rounded border p-2 text-sm">
-            <div className="text-xs text-muted-foreground">
-              {c.authorName ?? "Unknown"} · {new Date(c.createdAt).toLocaleString()}
-            </div>
-            <div className="whitespace-pre-wrap">{c.body}</div>
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="space-y-2 p-4">
+          <Label htmlFor="new-comment" className="text-xs uppercase tracking-wide text-muted-foreground">
+            Add a comment
+          </Label>
+          <Textarea
+            id="new-comment"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="Share an update, question or note…"
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={busy || !body.trim()}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await addFn({ data: { tenantId, jobId, body } });
+                  setBody("");
+                  qc.invalidateQueries({ queryKey: ["job-comments", tenantId, jobId] });
+                  onChanged();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving…
+                </>
+              ) : (
+                "Post Comment"
+              )}
+            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {list.data?.length === 0 && (
+        <EmptyState
+          icon={<MessageSquare className="h-5 w-5" />}
+          title="No comments yet"
+          hint="Be the first to add an update."
+        />
+      )}
+      <div className="space-y-3">
+        {list.data?.map((c) => (
+          <Card key={c.id} className="border-l-4 border-l-primary/30">
+            <CardContent className="flex gap-3 p-3">
+              <Avatar name={c.authorName} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-medium">
+                    {c.authorName ?? "Unknown"}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">
+                    {new Date(c.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="mt-1 whitespace-pre-wrap text-sm">{c.body}</div>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
-      <div>
-        <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} placeholder="Add a comment…" />
-        <Button
-          className="mt-2"
-          disabled={busy || !body.trim()}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await addFn({ data: { tenantId, jobId, body } });
-              setBody("");
-              qc.invalidateQueries({ queryKey: ["job-comments", tenantId, jobId] });
-              onChanged();
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          Add Comment
-        </Button>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  hint,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-10 text-center">
+      <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
+        {icon}
       </div>
+      <p className="text-sm font-medium">{title}</p>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {action}
     </div>
   );
 }
