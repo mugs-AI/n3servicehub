@@ -134,13 +134,28 @@ export const createJob = createServerFn({ method: "POST" })
     const approvalStatus = approvalRequired ? "waiting_approval" : "not_required";
     const workflowStatus = approvalRequired ? "draft" : initialStatus;
 
-    // Resolve assigned engineer
+    // Resolve assigned engineer (respects job_assignment_mode)
     let assignedToLocalId: string | null = null;
     let assignedN3UserId: string | null = null;
     let assignedDisplayName: string | null = null;
     let assignedType: "n3_user" | "local_user" | null = null;
-    if (data.assignedEngineerId) {
-      const [kind, id] = data.assignedEngineerId.split(":");
+
+    let effectiveAssigneeId: string | null = data.assignedEngineerId ?? null;
+    if (!effectiveAssigneeId) {
+      const { data: gs } = await context.supabase
+        .from("general_settings")
+        .select("job_assignment_mode")
+        .eq("tenant_id", data.tenantId)
+        .maybeSingle();
+      const mode = (gs?.job_assignment_mode ?? "auto_assign_creator") as
+        | "auto_assign_creator"
+        | "leave_unassigned"
+        | "select_each_time";
+      if (mode === "auto_assign_creator") effectiveAssigneeId = `local:${m.id}`;
+    }
+
+    if (effectiveAssigneeId) {
+      const [kind, id] = effectiveAssigneeId.split(":");
       if (kind === "local" && id) {
         const { data: lu } = await context.supabase
           .from("users_local")
@@ -149,10 +164,13 @@ export const createJob = createServerFn({ method: "POST" })
           .eq("tenant_id", data.tenantId)
           .eq("is_active", true)
           .maybeSingle();
-        if (!lu) throw new Error("Assigned engineer not found (local)");
-        assignedToLocalId = lu.id;
-        assignedDisplayName = lu.display_name?.trim() || lu.email;
-        assignedType = "local_user";
+        if (!lu) {
+          // Do not fail creation — spec allows falling back to unassigned.
+        } else {
+          assignedToLocalId = lu.id;
+          assignedDisplayName = lu.display_name?.trim() || lu.email;
+          assignedType = "local_user";
+        }
       } else if (kind === "n3" && id) {
         const { data: nu } = await context.supabase
           .from("servicehub_users")
@@ -161,17 +179,16 @@ export const createJob = createServerFn({ method: "POST" })
           .eq("n3_record_id", id)
           .eq("is_active", true)
           .maybeSingle();
-        if (!nu) throw new Error("Assigned engineer not found (N3)");
-        assignedN3UserId = nu.n3_record_id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = nu.payload as any;
-        assignedDisplayName =
-          nu.name?.trim() ||
-          (p && typeof p === "object" && (p.displayName || p.fullName || p.name || p.userName)) ||
-          "(unnamed)";
-        assignedType = "n3_user";
-      } else {
-        throw new Error("Invalid assigned engineer id");
+        if (nu) {
+          assignedN3UserId = nu.n3_record_id;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const p = nu.payload as any;
+          assignedDisplayName =
+            nu.name?.trim() ||
+            (p && typeof p === "object" && (p.displayName || p.fullName || p.name || p.userName)) ||
+            "(unnamed)";
+          assignedType = "n3_user";
+        }
       }
     }
 
