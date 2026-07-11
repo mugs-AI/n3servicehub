@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StatusApiRouteImport } from './routes/status.api'
 import { Route as AdminBootstrapRouteImport } from './routes/admin.bootstrap'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedAdminSyncRouteImport } from './routes/_authenticated/admin/sync'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
@@ -54,6 +55,11 @@ const AdminBootstrapRoute = AdminBootstrapRouteImport.update({
   path: '/admin/bootstrap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/admin/sync': typeof AuthenticatedAdminSyncRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/n3-launch': typeof N3LaunchRoute
   '/status': typeof StatusRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/admin/bootstrap': typeof AdminBootstrapRoute
   '/status/api': typeof StatusApiRoute
   '/_authenticated/admin/sync': typeof AuthenticatedAdminSyncRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/status'
     | '/settings'
+    | '/support'
     | '/admin/bootstrap'
     | '/status/api'
     | '/admin/sync'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/status'
     | '/settings'
+    | '/support'
     | '/admin/bootstrap'
     | '/status/api'
     | '/admin/sync'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/status'
     | '/_authenticated/settings'
+    | '/_authenticated/support'
     | '/admin/bootstrap'
     | '/status/api'
     | '/_authenticated/admin/sync'
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -229,11 +248,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedAdminSyncRoute: typeof AuthenticatedAdminSyncRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedAdminSyncRoute: AuthenticatedAdminSyncRoute,
 }
 
