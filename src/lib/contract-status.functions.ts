@@ -49,7 +49,7 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ContractStatusSummary> => {
     await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
 
-    const [{ count: totalCustomers }, { data: snaps }] = await Promise.all([
+    const [{ count: totalCustomers }, { data: snaps }, { data: gs }] = await Promise.all([
       context.supabase
         .from("servicehub_customers")
         .select("id", { count: "exact", head: true })
@@ -58,6 +58,11 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
         .from("customer_contract_snapshots")
         .select("contract_status, is_stale, calculation_error, last_calculated_at")
         .eq("tenant_id", data.tenantId),
+      context.supabase
+        .from("general_settings")
+        .select("due_soon_days")
+        .eq("tenant_id", data.tenantId)
+        .maybeSingle(),
     ]);
     const counts: Record<ContractStatus, number> = {
       active: 0,
@@ -78,6 +83,12 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
         last = s.last_calculated_at;
       }
     }
+    let configError: string | null = null;
+    if (!gs) {
+      configError = "General Settings row missing for this tenant.";
+    } else if (typeof gs.due_soon_days !== "number" || gs.due_soon_days <= 0) {
+      configError = "General Settings 'due_soon_days' is not configured.";
+    }
     return {
       totalCustomers: totalCustomers ?? 0,
       snapshotCount: (snaps ?? []).length,
@@ -85,6 +96,7 @@ export const getContractStatusSummary = createServerFn({ method: "POST" })
       staleCount: stale,
       failedCount: failed,
       lastCalculatedAt: last,
+      configError,
     };
   });
 
