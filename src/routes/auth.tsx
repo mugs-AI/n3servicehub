@@ -39,7 +39,7 @@ function AuthPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (cancelled) return;
       if (data.user) {
-        navigate({ to: search.redirect ?? "/", replace: true });
+        navigate({ to: search.redirect ?? "/support", replace: true });
       }
     });
     return () => {
@@ -60,7 +60,7 @@ function AuthPage() {
       setError(signInError.message);
       return;
     }
-    navigate({ to: search.redirect ?? "/", replace: true });
+    navigate({ to: search.redirect ?? "/support", replace: true });
   };
 
   return (

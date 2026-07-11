@@ -20,6 +20,7 @@ import { Route as AdminDevBootstrapRouteImport } from './routes/admin.dev.bootst
 import { Route as AuthenticatedJobsQuickRouteImport } from './routes/_authenticated/jobs.quick'
 import { Route as AuthenticatedJobsNewRouteImport } from './routes/_authenticated/jobs.new'
 import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
+import { Route as AuthenticatedAdminDevRouteRouteImport } from './routes/_authenticated/admin/dev/route'
 import { Route as ApiPublicHooksSyncTickRouteImport } from './routes/api/public/hooks/sync-tick'
 import { Route as AuthenticatedJobsCreatedIdRouteImport } from './routes/_authenticated/jobs.created.$id'
 import { Route as AuthenticatedAdminDevSyncRouteImport } from './routes/_authenticated/admin/dev/sync'
@@ -80,6 +81,12 @@ const AuthenticatedJobsJobIdRoute = AuthenticatedJobsJobIdRouteImport.update({
   path: '/jobs/$jobId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminDevRouteRoute =
+  AuthenticatedAdminDevRouteRouteImport.update({
+    id: '/admin/dev',
+    path: '/admin/dev',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksSyncTickRoute = ApiPublicHooksSyncTickRouteImport.update({
   id: '/api/public/hooks/sync-tick',
   path: '/api/public/hooks/sync-tick',
@@ -93,15 +100,15 @@ const AuthenticatedJobsCreatedIdRoute =
   } as any)
 const AuthenticatedAdminDevSyncRoute =
   AuthenticatedAdminDevSyncRouteImport.update({
-    id: '/admin/dev/sync',
-    path: '/admin/dev/sync',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/sync',
+    path: '/sync',
+    getParentRoute: () => AuthenticatedAdminDevRouteRoute,
   } as any)
 const AuthenticatedAdminDevStatusRoute =
   AuthenticatedAdminDevStatusRouteImport.update({
-    id: '/admin/dev/status',
-    path: '/admin/dev/status',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/status',
+    path: '/status',
+    getParentRoute: () => AuthenticatedAdminDevRouteRoute,
   } as any)
 const AuthenticatedAdminDevStatusApiRoute =
   AuthenticatedAdminDevStatusApiRouteImport.update({
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/n3-launch': typeof N3LaunchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/admin/dev': typeof AuthenticatedAdminDevRouteRouteWithChildren
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/n3-launch': typeof N3LaunchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/admin/dev': typeof AuthenticatedAdminDevRouteRouteWithChildren
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/new': typeof AuthenticatedJobsNewRoute
   '/jobs/quick': typeof AuthenticatedJobsQuickRoute
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/n3-launch': typeof N3LaunchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/admin/dev': typeof AuthenticatedAdminDevRouteRouteWithChildren
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/new': typeof AuthenticatedJobsNewRoute
   '/_authenticated/jobs/quick': typeof AuthenticatedJobsQuickRoute
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/settings'
     | '/support'
+    | '/admin/dev'
     | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/settings'
     | '/support'
+    | '/admin/dev'
     | '/jobs/$jobId'
     | '/jobs/new'
     | '/jobs/quick'
@@ -206,6 +218,7 @@ export interface FileRouteTypes {
     | '/n3-launch'
     | '/_authenticated/settings'
     | '/_authenticated/support'
+    | '/_authenticated/admin/dev'
     | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/new'
     | '/_authenticated/jobs/quick'
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/dev': {
+      id: '/_authenticated/admin/dev'
+      path: '/admin/dev'
+      fullPath: '/admin/dev'
+      preLoaderRoute: typeof AuthenticatedAdminDevRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/hooks/sync-tick': {
       id: '/api/public/hooks/sync-tick'
       path: '/api/public/hooks/sync-tick'
@@ -322,17 +342,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/admin/dev/sync': {
       id: '/_authenticated/admin/dev/sync'
-      path: '/admin/dev/sync'
+      path: '/sync'
       fullPath: '/admin/dev/sync'
       preLoaderRoute: typeof AuthenticatedAdminDevSyncRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminDevRouteRoute
     }
     '/_authenticated/admin/dev/status': {
       id: '/_authenticated/admin/dev/status'
-      path: '/admin/dev/status'
+      path: '/status'
       fullPath: '/admin/dev/status'
       preLoaderRoute: typeof AuthenticatedAdminDevStatusRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminDevRouteRoute
     }
     '/_authenticated/admin/dev/status/api': {
       id: '/_authenticated/admin/dev/status/api'
@@ -358,28 +378,42 @@ const AuthenticatedAdminDevStatusRouteWithChildren =
     AuthenticatedAdminDevStatusRouteChildren,
   )
 
+interface AuthenticatedAdminDevRouteRouteChildren {
+  AuthenticatedAdminDevStatusRoute: typeof AuthenticatedAdminDevStatusRouteWithChildren
+  AuthenticatedAdminDevSyncRoute: typeof AuthenticatedAdminDevSyncRoute
+}
+
+const AuthenticatedAdminDevRouteRouteChildren: AuthenticatedAdminDevRouteRouteChildren =
+  {
+    AuthenticatedAdminDevStatusRoute:
+      AuthenticatedAdminDevStatusRouteWithChildren,
+    AuthenticatedAdminDevSyncRoute: AuthenticatedAdminDevSyncRoute,
+  }
+
+const AuthenticatedAdminDevRouteRouteWithChildren =
+  AuthenticatedAdminDevRouteRoute._addFileChildren(
+    AuthenticatedAdminDevRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedAdminDevRouteRoute: typeof AuthenticatedAdminDevRouteRouteWithChildren
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsNewRoute: typeof AuthenticatedJobsNewRoute
   AuthenticatedJobsQuickRoute: typeof AuthenticatedJobsQuickRoute
   AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
-  AuthenticatedAdminDevStatusRoute: typeof AuthenticatedAdminDevStatusRouteWithChildren
-  AuthenticatedAdminDevSyncRoute: typeof AuthenticatedAdminDevSyncRoute
   AuthenticatedJobsCreatedIdRoute: typeof AuthenticatedJobsCreatedIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedAdminDevRouteRoute: AuthenticatedAdminDevRouteRouteWithChildren,
   AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
   AuthenticatedJobsNewRoute: AuthenticatedJobsNewRoute,
   AuthenticatedJobsQuickRoute: AuthenticatedJobsQuickRoute,
   AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
-  AuthenticatedAdminDevStatusRoute:
-    AuthenticatedAdminDevStatusRouteWithChildren,
-  AuthenticatedAdminDevSyncRoute: AuthenticatedAdminDevSyncRoute,
   AuthenticatedJobsCreatedIdRoute: AuthenticatedJobsCreatedIdRoute,
 }
 
