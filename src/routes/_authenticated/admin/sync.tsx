@@ -17,8 +17,10 @@ import {
   getContractStatusSummary,
   listContractSnapshots,
   recalculateContractStatus,
+  getContractParsingDiagnostics,
   type ContractStatusSummary,
   type ContractSnapshotRow,
+  type ParsingDiagnosticRow,
 } from "@/lib/contract-status.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/sync")({
@@ -87,12 +89,14 @@ function SyncConsole() {
   const fetchContractSummary = useServerFn(getContractStatusSummary);
   const fetchContractSnapshots = useServerFn(listContractSnapshots);
   const runRecalc = useServerFn(recalculateContractStatus);
+  const fetchDiagnostics = useServerFn(getContractParsingDiagnostics);
 
   const [tenants, setTenants] = useState<Array<{ tenantId: string; name: string }>>([]);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [report, setReport] = useState<SyncStatusReport | null>(null);
   const [contractSummary, setContractSummary] = useState<ContractStatusSummary | null>(null);
   const [snapshots, setSnapshots] = useState<ContractSnapshotRow[]>([]);
+  const [diagnostics, setDiagnostics] = useState<ParsingDiagnosticRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
