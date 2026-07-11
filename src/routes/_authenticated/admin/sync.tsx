@@ -176,6 +176,20 @@ function SyncConsole() {
     }
   };
 
+  const runDiagnostics = async () => {
+    if (!tenantId) return;
+    setBusy("__diag__");
+    setErr(null);
+    try {
+      const rows = await fetchDiagnostics({ data: { tenantId, limit: 100 } });
+      setDiagnostics(rows);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl p-6">
       <header className="mb-6 flex items-center justify-between">
