@@ -168,3 +168,76 @@ export const recalculateContractStatus = createServerFn({ method: "POST" })
     const result = await engine.recalculateTenant(data.tenantId);
     return result;
   });
+
+/**
+ * Diagnostics: return synced Sales Invoices / Delivery Orders where the
+ * payload has no recognized line collection or no line contains a Stock Code.
+ * Safe fields only — no pricing, no raw payloads.
+ */
+export const getContractParsingDiagnostics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { tenantId: string; limit?: number }) => i)
+  .handler(async ({ data, context }): Promise<ParsingDiagnosticRow[]> => {
+    await assertTenantAdmin(context.supabase, context.userId, data.tenantId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { parseDocumentLines } = await import(
+      "@/lib/contract-status/ContractStatusEngine.server"
+    );
+    const cap = Math.min(data.limit ?? 100, 500);
+
+    const [{ data: invoices }, { data: dos }] = await Promise.all([
+      supabaseAdmin
+        .from("servicehub_sales_invoices")
+        .select("n3_record_id, doc_no, doc_date, n3_customer_code, is_cancelled, payload")
+        .eq("tenant_id", data.tenantId)
+        .order("doc_date", { ascending: false })
+        .limit(2000),
+      supabaseAdmin
+        .from("servicehub_delivery_orders")
+        .select("n3_record_id, doc_no, doc_date, n3_customer_code, is_cancelled, payload")
+        .eq("tenant_id", data.tenantId)
+        .order("doc_date", { ascending: false })
+        .limit(2000),
+    ]);
+
+    const out: ParsingDiagnosticRow[] = [];
+    const scan = (
+      source: "sales_invoice" | "delivery_order",
+      rows: Array<{
+        n3_record_id: string;
+        doc_no: string | null;
+        doc_date: string | null;
+        n3_customer_code: string | null;
+        is_cancelled: boolean | null;
+        payload: unknown;
+      }> | null,
+    ) => {
+      for (const r of rows ?? []) {
+        if (r.is_cancelled) continue;
+        const parsed = parseDocumentLines(r.payload);
+        let reason: string | null = null;
+        if (!parsed.hadLinesArray) {
+          reason = "No recognized line collection (details/lines/items) in payload.";
+        } else if (parsed.codes.length === 0) {
+          reason = "Lines present but no Stock Code field found on any line.";
+        } else if (parsed.missingStockCount > 0) {
+          reason = `${parsed.missingStockCount} of ${parsed.lineCount} line(s) missing Stock Code.`;
+        }
+        if (reason) {
+          out.push({
+            source,
+            docId: r.n3_record_id,
+            docNo: r.doc_no,
+            docDate: r.doc_date,
+            customerCode: r.n3_customer_code,
+            reason,
+            lineCount: parsed.lineCount,
+            missingStockCount: parsed.missingStockCount,
+          });
+        }
+      }
+    };
+    scan("sales_invoice", invoices);
+    scan("delivery_order", dos);
+    return out.slice(0, cap);
+  });
