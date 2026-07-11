@@ -1,9 +1,16 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+
+const searchSchema = z.object({
+  token: z.string().optional(),
+  tenant: z.string().optional(),
+});
 
 export const Route = createFileRoute("/")({
   ssr: false,
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "ServiceHub for N3.QNE.Cloud" },
@@ -25,7 +32,21 @@ export const Route = createFileRoute("/")({
 
 function EntryRedirect() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/" });
+
   useEffect(() => {
+    // If N3 launched us at "/?token=...", forward to the diagnostic handler
+    // WITHOUT persisting the token anywhere. Preserved only across this
+    // client-side redirect.
+    if (search.token) {
+      navigate({
+        to: "/n3-launch",
+        search: { token: search.token, tenant: search.tenant },
+        replace: true,
+      });
+      return;
+    }
+
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
@@ -38,7 +59,7 @@ function EntryRedirect() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, search.token, search.tenant]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
