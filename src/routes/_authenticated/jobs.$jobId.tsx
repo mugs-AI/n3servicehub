@@ -744,135 +744,163 @@ function ActionsPanel({
   const isClosed = ["completed", "cancelled"].includes(job.status);
 
   return (
-    <div className="space-y-2">
-      {err && <p className="text-sm text-destructive">{err}</p>}
+    <div className="space-y-3">
+      {err && (
+        <p className="flex items-start gap-1 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {err}
+        </p>
+      )}
 
-      {job.approval_required && job.approval_status === "waiting_approval" && job.viewerCanApprove && (
-        <div className="rounded border p-2 space-y-2">
-          <div className="text-xs font-medium">Approval required</div>
-          <ApproveDialog
-            onApprove={(t, note) =>
-              run("approve", () =>
-                approveFn({
-                  data: {
-                    tenantId: job.tenant_id,
-                    jobId: job.id,
-                    approvalType: t,
-                    note,
-                  },
-                }),
-              )
-            }
-          />
-          <RejectDialog
-            onReject={(reason, then) =>
-              run("reject", () =>
-                rejectFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason, then },
-                }),
-              )
-            }
-          />
+      {job.approval_required &&
+        job.approval_status === "waiting_approval" &&
+        job.viewerCanApprove && (
+          <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+              <ShieldAlert className="h-3.5 w-3.5" /> Approval required
+            </div>
+            <ApproveDialog
+              onApprove={(t, note) =>
+                run("approve", () =>
+                  approveFn({
+                    data: {
+                      tenantId: job.tenant_id,
+                      jobId: job.id,
+                      approvalType: t,
+                      note,
+                    },
+                  }),
+                )
+              }
+            />
+            <RejectDialog
+              onReject={(reason, then) =>
+                run("reject", () =>
+                  rejectFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason, then },
+                  }),
+                )
+              }
+            />
+          </div>
+        )}
+
+      {/* Primary actions */}
+      {(canStart || canResume) && (
+        <div className="space-y-2">
+          {canStart && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5"
+              disabled={busy !== null}
+              onClick={() =>
+                run("start", () => startFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+              }
+            >
+              <Play className="h-4 w-4" /> Start Job
+            </Button>
+          )}
+          {canResume && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5"
+              variant="secondary"
+              disabled={busy !== null}
+              onClick={() =>
+                run("resume", () =>
+                  resumeFn({
+                    data: {
+                      tenantId: job.tenant_id,
+                      jobId: job.id,
+                      from: job.status === "waiting_vendor" ? "vendor" : "customer",
+                    },
+                  }),
+                )
+              }
+            >
+              <RotateCcw className="h-4 w-4" /> Resume Job
+            </Button>
+          )}
         </div>
       )}
 
-      {canStart && (
-        <Button
-          size="sm"
-          className="w-full"
-          disabled={busy !== null}
-          onClick={() =>
-            run("start", () => startFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
-          }
-        >
-          Start Job
-        </Button>
-      )}
-      {canResume && (
-        <Button
-          size="sm"
-          className="w-full"
-          variant="secondary"
-          disabled={busy !== null}
-          onClick={() =>
-            run("resume", () =>
-              resumeFn({
-                data: {
-                  tenantId: job.tenant_id,
-                  jobId: job.id,
-                  from: job.status === "waiting_vendor" ? "vendor" : "customer",
-                },
-              }),
-            )
-          }
-        >
-          Resume
-        </Button>
-      )}
+      {/* Secondary actions */}
       {job.viewerCanAct && !isClosed && (
         <>
-          <ReassignDialog
-            job={job}
-            engineers={engineers}
-            onSubmit={(assigneeId, reason) =>
-              run("reassign", () =>
-                reassignFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, assigneeId, reason },
-                }),
-              )
-            }
-          />
-          <WaitingCustomerDialog
-            onSubmit={(reason, followUpDate) =>
-              run("wc", () =>
-                wcFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason, followUpDate },
-                }),
-              )
-            }
-          />
-          {job.vendor_ticket_number && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              disabled={busy !== null}
-              onClick={() =>
-                run("wv", () => wvFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+          <div className="space-y-2 border-t pt-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Update Status
+            </div>
+            <ReassignDialog
+              job={job}
+              engineers={engineers}
+              onSubmit={(assigneeId, reason) =>
+                run("reassign", () =>
+                  reassignFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, assigneeId, reason },
+                  }),
+                )
               }
-            >
-              Mark Waiting Vendor
-            </Button>
-          )}
-          <CompleteDialog
-            job={job}
-            onSubmit={(note, force) =>
-              run("complete", () =>
-                completeFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, note, force },
-                }),
-              )
-            }
-          />
-          <CancelDialog
-            onSubmit={(reason) =>
-              run("cancel", () =>
-                cancelFn({
-                  data: { tenantId: job.tenant_id, jobId: job.id, reason },
-                }),
-              )
-            }
-          />
+            />
+            <WaitingCustomerDialog
+              onSubmit={(reason, followUpDate) =>
+                run("wc", () =>
+                  wcFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason, followUpDate },
+                  }),
+                )
+              }
+            />
+            {job.vendor_ticket_number && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-1.5"
+                disabled={busy !== null}
+                onClick={() =>
+                  run("wv", () => wvFn({ data: { tenantId: job.tenant_id, jobId: job.id } }))
+                }
+              >
+                <Truck className="h-4 w-4" /> Mark Waiting Vendor
+              </Button>
+            )}
+          </div>
+
+          {/* Final actions */}
+          <div className="space-y-2 border-t pt-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Close Job
+            </div>
+            <CompleteDialog
+              job={job}
+              onSubmit={(note, force) =>
+                run("complete", () =>
+                  completeFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, note, force },
+                  }),
+                )
+              }
+            />
+            <CancelDialog
+              onSubmit={(reason) =>
+                run("cancel", () =>
+                  cancelFn({
+                    data: { tenantId: job.tenant_id, jobId: job.id, reason },
+                  }),
+                )
+              }
+            />
+          </div>
         </>
       )}
       {isClosed && (
-        <p className="text-xs text-muted-foreground">
+        <p className="rounded-md bg-muted/50 p-2 text-center text-xs text-muted-foreground">
           This job is {job.status}. No further actions.
         </p>
       )}
     </div>
   );
 }
+
 
 function ReassignDialog({
   job,
