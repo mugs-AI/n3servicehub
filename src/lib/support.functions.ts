@@ -409,7 +409,7 @@ export const listEngineerOptions = createServerFn({ method: "POST" })
     const [n3, local] = await Promise.all([
       context.supabase
         .from("servicehub_users")
-        .select("n_record_id:n3_record_id, name, payload")
+        .select("n3_record_id, name, payload")
         .eq("tenant_id", data.tenantId)
         .eq("is_active", true)
         .limit(500),
@@ -424,7 +424,7 @@ export const listEngineerOptions = createServerFn({ method: "POST" })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const u of (n3.data ?? []) as any[]) {
       out.push({
-        id: `n3:${u.n_record_id}`,
+        id: `n3:${u.n3_record_id}`,
         displayName: extractN3UserName(u.payload, u.name),
         source: "n3_user",
       });
