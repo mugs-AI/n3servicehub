@@ -134,13 +134,28 @@ export const createJob = createServerFn({ method: "POST" })
     const approvalStatus = approvalRequired ? "waiting_approval" : "not_required";
     const workflowStatus = approvalRequired ? "draft" : initialStatus;
 
-    // Resolve assigned engineer
+    // Resolve assigned engineer (respects job_assignment_mode)
     let assignedToLocalId: string | null = null;
     let assignedN3UserId: string | null = null;
     let assignedDisplayName: string | null = null;
     let assignedType: "n3_user" | "local_user" | null = null;
-    if (data.assignedEngineerId) {
-      const [kind, id] = data.assignedEngineerId.split(":");
+
+    let effectiveAssigneeId: string | null = data.assignedEngineerId ?? null;
+    if (!effectiveAssigneeId) {
+      const { data: gs } = await context.supabase
+        .from("general_settings")
+        .select("job_assignment_mode")
+        .eq("tenant_id", data.tenantId)
+        .maybeSingle();
+      const mode = (gs?.job_assignment_mode ?? "auto_assign_creator") as
+        | "auto_assign_creator"
+        | "leave_unassigned"
+        | "select_each_time";
+      if (mode === "auto_assign_creator") effectiveAssigneeId = `local:${m.id}`;
+    }
+
+    if (effectiveAssigneeId) {
+      const [kind, id] = effectiveAssigneeId.split(":");
       if (kind === "local" && id) {
         const { data: lu } = await context.supabase
           .from("users_local")
@@ -149,10 +164,13 @@ export const createJob = createServerFn({ method: "POST" })
           .eq("tenant_id", data.tenantId)
           .eq("is_active", true)
           .maybeSingle();
-        if (!lu) throw new Error("Assigned engineer not found (local)");
-        assignedToLocalId = lu.id;
-        assignedDisplayName = lu.display_name?.trim() || lu.email;
-        assignedType = "local_user";
+        if (!lu) {
+          // Do not fail creation — spec allows falling back to unassigned.
+        } else {
+          assignedToLocalId = lu.id;
+          assignedDisplayName = lu.display_name?.trim() || lu.email;
+          assignedType = "local_user";
+        }
       } else if (kind === "n3" && id) {
         const { data: nu } = await context.supabase
           .from("servicehub_users")
@@ -161,17 +179,16 @@ export const createJob = createServerFn({ method: "POST" })
           .eq("n3_record_id", id)
           .eq("is_active", true)
           .maybeSingle();
-        if (!nu) throw new Error("Assigned engineer not found (N3)");
-        assignedN3UserId = nu.n3_record_id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = nu.payload as any;
-        assignedDisplayName =
-          nu.name?.trim() ||
-          (p && typeof p === "object" && (p.displayName || p.fullName || p.name || p.userName)) ||
-          "(unnamed)";
-        assignedType = "n3_user";
-      } else {
-        throw new Error("Invalid assigned engineer id");
+        if (nu) {
+          assignedN3UserId = nu.n3_record_id;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const p = nu.payload as any;
+          assignedDisplayName =
+            nu.name?.trim() ||
+            (p && typeof p === "object" && (p.displayName || p.fullName || p.name || p.userName)) ||
+            "(unnamed)";
+          assignedType = "n3_user";
+        }
       }
     }
 
@@ -233,6 +250,56 @@ export const createJob = createServerFn({ method: "POST" })
         uploaded_by: m.id,
       });
     }
+
+    // Activity + notification
+    await context.supabase.from("activity_logs").insert({
+      tenant_id: data.tenantId,
+      entity_type: "job",
+      entity_id: inserted.id,
+      action: approvalRequired ? "job_created_pending_approval" : "job_created",
+      after_value: {
+        contractStatus,
+        approvalRequired,
+        assignedTo: assignedDisplayName,
+        mode: data.mode,
+      },
+      user_code: m.email,
+      user_type: "local_user",
+      result: "success",
+    });
+    if (assignedToLocalId && assignedToLocalId !== m.id) {
+      await context.supabase.from("notifications").insert({
+        tenant_id: data.tenantId,
+        recipient_id: assignedToLocalId,
+        type: "job_assigned",
+        title: `Job ${inserted.job_no} assigned`,
+        body: subject,
+        entity_table: "jobs",
+        entity_id: inserted.id,
+      });
+    }
+    if (approvalRequired) {
+      // Notify tenant admins
+      const { data: admins } = await context.supabase
+        .from("users_local")
+        .select("id")
+        .eq("tenant_id", data.tenantId)
+        .in("role", ["owner", "admin"])
+        .eq("is_active", true);
+      for (const a of (admins ?? []) as Array<{ id: string }>) {
+        if (a.id === m.id) continue;
+        await context.supabase.from("notifications").insert({
+          tenant_id: data.tenantId,
+          recipient_id: a.id,
+          type: "approval_requested",
+          title: `Approval needed: ${inserted.job_no}`,
+          body: subject,
+          entity_table: "jobs",
+          entity_id: inserted.id,
+        });
+      }
+    }
+
 
     return {
       id: inserted.id,

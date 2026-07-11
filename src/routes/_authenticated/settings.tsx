@@ -858,6 +858,50 @@ function GeneralTab({ tenantId }: { tenantId: string }) {
 
       <Card className="md:col-span-2">
         <CardHeader>
+          <CardTitle>Job Assignment</CardTitle>
+          <CardDescription>
+            Label shown for the assignee column, and default behaviour when a job is created without a selection.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Assigned User Label</Label>
+            <Input
+              value={s.assignedUserLabel}
+              maxLength={40}
+              onChange={(e) => setS({ ...s, assignedUserLabel: e.target.value })}
+              onBlur={async () => {
+                await update({ data: { tenantId, assignedUserLabel: s.assignedUserLabel } });
+              }}
+              placeholder="Engineer / Technician / Support"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Used in Jobs list column header and detail labels.
+            </p>
+          </div>
+          <div>
+            <Label>Default Assignment Mode</Label>
+            <Select
+              value={s.jobAssignmentMode}
+              onValueChange={async (v) => {
+                const mode = v as GeneralSettings["jobAssignmentMode"];
+                setS({ ...s, jobAssignmentMode: mode });
+                await update({ data: { tenantId, jobAssignmentMode: mode } });
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto_assign_creator">Auto-assign to creator</SelectItem>
+                <SelectItem value="leave_unassigned">Leave unassigned</SelectItem>
+                <SelectItem value="select_each_time">Require selection each time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="md:col-span-2">
+        <CardHeader>
+
           <CardTitle>Timezone</CardTitle>
           <CardDescription>Server-side timezone for scheduling and reports.</CardDescription>
         </CardHeader>

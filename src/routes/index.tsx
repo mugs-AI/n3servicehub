@@ -90,6 +90,12 @@ function LandingPage() {
               Support Dashboard
             </Link>
             <Link
+              to="/jobs"
+              className="rounded-md border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+            >
+              Jobs Workspace
+            </Link>
+            <Link
               to="/admin/sync"
               className="rounded-md border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
             >
