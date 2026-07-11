@@ -393,6 +393,58 @@ function SyncConsole() {
               </tbody>
             </table>
           </div>
+
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Document Parsing Diagnostics</h3>
+              <button
+                className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
+                onClick={runDiagnostics}
+                disabled={!tenantId || busy !== null}
+              >
+                {busy === "__diag__" ? "Scanning…" : "Scan payloads"}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-gray-500">
+              Lists synced Sales Invoices / Delivery Orders where no line collection or Stock
+              Code field was found. No pricing or raw payload is exposed.
+            </p>
+            {diagnostics && diagnostics.length === 0 && (
+              <p className="text-sm text-green-700">No parsing issues found.</p>
+            )}
+            {diagnostics && diagnostics.length > 0 && (
+              <div className="overflow-x-auto rounded border">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th className="px-3 py-2">Source</th>
+                      <th className="px-3 py-2">Doc No</th>
+                      <th className="px-3 py-2">Doc Date</th>
+                      <th className="px-3 py-2">Customer</th>
+                      <th className="px-3 py-2">Lines</th>
+                      <th className="px-3 py-2">Missing</th>
+                      <th className="px-3 py-2">Reason</th>
+                      <th className="px-3 py-2">Doc ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {diagnostics.map((d) => (
+                      <tr key={`${d.source}:${d.docId}`} className="border-t">
+                        <td className="px-3 py-2">{d.source}</td>
+                        <td className="px-3 py-2">{d.docNo ?? "—"}</td>
+                        <td className="px-3 py-2">{d.docDate ?? "—"}</td>
+                        <td className="px-3 py-2">{d.customerCode ?? "—"}</td>
+                        <td className="px-3 py-2">{d.lineCount}</td>
+                        <td className="px-3 py-2">{d.missingStockCount}</td>
+                        <td className="px-3 py-2 text-red-700">{d.reason}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{d.docId}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </section>
       )}
     </div>
