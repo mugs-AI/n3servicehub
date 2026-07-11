@@ -177,6 +177,23 @@ export class SyncManager {
         .eq("tenant_id", tenant.id)
         .eq("entity", entity);
 
+      // Auto-recalc Customer Contract Status for affected customers.
+      if (
+        (entity === "sales_invoices" || entity === "delivery_orders") &&
+        result.affectedCustomerCodes &&
+        result.affectedCustomerCodes.length > 0
+      ) {
+        try {
+          const { ContractStatusEngine } = await import(
+            "@/lib/contract-status/ContractStatusEngine.server"
+          );
+          const engine = new ContractStatusEngine(this.admin);
+          await engine.recalculateForCustomers(tenant.id, result.affectedCustomerCodes);
+        } catch {
+          // Non-fatal: sync succeeded even if recalc failed.
+        }
+      }
+
       return this.finalizeRun(run.id, entity, startedAt, {
         status: "success",
         inserted: result.inserted,
@@ -269,7 +286,13 @@ export class SyncManager {
     client: N3Client,
     entity: SyncEntity,
     watermark: string | null,
-  ): Promise<{ inserted: number; updated: number; processed: number; newWatermark?: string | null }> {
+  ): Promise<{
+    inserted: number;
+    updated: number;
+    processed: number;
+    newWatermark?: string | null;
+    affectedCustomerCodes?: string[];
+  }> {
     switch (entity) {
       case "customers":       return this.syncCustomers(tenant, client);
       case "stock":           return this.syncStock(tenant, client);
@@ -491,7 +514,10 @@ export class SyncManager {
       })
       .filter((r) => r.n3_record_id.length > 0);
     const counts = await this.upsertBatch("servicehub_sales_invoices", tenant.id, rows);
-    return { ...counts, processed: rows.length, newWatermark: maxModified };
+    const affectedCustomerCodes = Array.from(
+      new Set(rows.map((r) => r.n3_customer_code).filter((c): c is string => !!c)),
+    );
+    return { ...counts, processed: rows.length, newWatermark: maxModified, affectedCustomerCodes };
   }
 
   // -----------------------------------------------------------------
@@ -537,6 +563,9 @@ export class SyncManager {
       })
       .filter((r) => r.n3_record_id.length > 0);
     const counts = await this.upsertBatch("servicehub_delivery_orders", tenant.id, rows);
-    return { ...counts, processed: rows.length, newWatermark: maxModified };
+    const affectedCustomerCodes = Array.from(
+      new Set(rows.map((r) => r.n3_customer_code).filter((c): c is string => !!c)),
+    );
+    return { ...counts, processed: rows.length, newWatermark: maxModified, affectedCustomerCodes };
   }
 }

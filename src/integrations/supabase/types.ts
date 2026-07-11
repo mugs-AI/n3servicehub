@@ -189,11 +189,13 @@ export type Database = {
       }
       customer_contract_snapshots: {
         Row: {
+          calculation_error: string | null
           contract_days: number | null
           contract_status: string
           created_at: string
           expiry_date: string | null
           id: string
+          is_stale: boolean
           last_calculated_at: string | null
           latest_contract_date: string | null
           latest_contract_document_id: string | null
@@ -208,11 +210,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          calculation_error?: string | null
           contract_days?: number | null
           contract_status?: string
           created_at?: string
           expiry_date?: string | null
           id?: string
+          is_stale?: boolean
           last_calculated_at?: string | null
           latest_contract_date?: string | null
           latest_contract_document_id?: string | null
@@ -227,11 +231,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          calculation_error?: string | null
           contract_days?: number | null
           contract_status?: string
           created_at?: string
           expiry_date?: string | null
           id?: string
+          is_stale?: boolean
           last_calculated_at?: string | null
           latest_contract_date?: string | null
           latest_contract_document_id?: string | null
