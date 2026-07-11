@@ -86,6 +86,7 @@ function DevLanding() {
 
       <Section title="Bootstrap & Launch">
         <NavCard to="/admin/dev/bootstrap" title="First Tenant Bootstrap" desc="Provision the first tenant (public when no tenant exists)." />
+        <NavCard to="/admin/dev/n3-connect" title="N3 Dev Connect (Path B)" desc="Exchange N3 API key for a JWT and save it to localStorage." />
         <NavCard to="/n3-launch" title="N3 Launch Diagnostic" desc="Safely inspect ?token= handoff from N3." />
         <NavCard to="/auth" title="Local Sign In" desc="Email/password authentication." />
       </Section>
