@@ -662,7 +662,7 @@ export const updateJobInfo = createServerFn({ method: "POST" })
     if (data.dueDate !== undefined) patch.due_date = data.dueDate;
     const { error } = await context.supabase
       .from("jobs")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.jobId)
       .eq("tenant_id", data.tenantId);
     if (error) throw error;
@@ -706,7 +706,7 @@ export const reassignJob = createServerFn({ method: "POST" })
     if (job.status === "pending" && resolved.assignedToLocalId) patch.status = "assigned";
     const { error } = await context.supabase
       .from("jobs")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.jobId)
       .eq("tenant_id", data.tenantId);
     if (error) throw error;
@@ -840,7 +840,7 @@ export const updateVendorReferral = createServerFn({ method: "POST" })
     if (data.vendorTicketNumber && !job.vendor_referral_required) patch.vendor_referral_required = true;
     const { error } = await context.supabase
       .from("jobs")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.jobId)
       .eq("tenant_id", data.tenantId);
     if (error) throw error;
@@ -1004,7 +1004,7 @@ export const rejectJob = createServerFn({ method: "POST" })
     }
     const { error } = await context.supabase
       .from("jobs")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.jobId)
       .eq("tenant_id", data.tenantId);
     if (error) throw error;
@@ -1094,8 +1094,8 @@ export type ActivityEntry = {
   action: string;
   createdAt: string;
   userCode: string | null;
-  before: unknown;
-  after: unknown;
+  before: any;
+  after: any;
 };
 
 export const listJobActivity = createServerFn({ method: "POST" })
