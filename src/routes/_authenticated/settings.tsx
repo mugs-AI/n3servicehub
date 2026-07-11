@@ -899,9 +899,9 @@ function GeneralTab({ tenantId }: { tenantId: string }) {
           </div>
         </CardContent>
       </Card>
-
-
+      <Card className="md:col-span-2">
         <CardHeader>
+
           <CardTitle>Timezone</CardTitle>
           <CardDescription>Server-side timezone for scheduling and reports.</CardDescription>
         </CardHeader>
