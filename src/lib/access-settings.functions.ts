@@ -86,9 +86,6 @@ export const updateApprovalRule = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.id)
       .eq("tenant_id", data.tenantId);
-      .update(patch)
-      .eq("id", data.id)
-      .eq("tenant_id", data.tenantId);
     if (error) throw error;
     return { ok: true };
   });
